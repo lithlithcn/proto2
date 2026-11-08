@@ -2425,8 +2425,8 @@ let hiT=0;
 
 // ---- cache des petites balles (rendu identique à l'ancien, juste plus rapide) + tremblement fluide
 const SPRC=new Map(),shN=(t,k)=>Math.sin(t*1.7+k)*.5+Math.sin(t*2.9+k*3)*.3+Math.sin(t*5.3+k*7)*.2;
-function bSpr(col,r,o){const rr=Math.round(r*2)/2,key=col+rr+'|'+o;let S=SPRC.get(key);if(S)return S;const p=Math.ceil(rr+3),c=document.createElement('canvas');c.width=c.height=p*2;const x=c.getContext('2d');
- x.globalAlpha=.8;x.fillStyle=COLS[o]||'#fff';x.beginPath();x.arc(p,p,rr+1.8,0,TAU);x.fill();x.globalAlpha=1;x.fillStyle=col;x.beginPath();x.arc(p,p,rr,0,TAU);x.fill();
+function bSpr(col,r,o){const rr=Math.round(r*2)/2,key=col+rr+'|'+o;let S=SPRC.get(key);if(S)return S;const p=Math.ceil(rr+5),c=document.createElement('canvas');c.width=c.height=p*2;const x=c.getContext('2d');
+ x.globalAlpha=.62;x.fillStyle='#05030c';x.beginPath();x.arc(p,p,rr+3.4,0,TAU);x.fill();x.globalAlpha=.8;x.fillStyle=COLS[o]||'#fff';x.beginPath();x.arc(p,p,rr+1.8,0,TAU);x.fill();x.globalAlpha=1;x.fillStyle=col;x.beginPath();x.arc(p,p,rr,0,TAU);x.fill();
  if(rr>=3){x.fillStyle='rgba(255,255,255,.85)';x.beginPath();x.arc(p,p,rr*.5,0,TAU);x.fill()}c.o=p;if(SPRC.size>600)SPRC.clear();SPRC.set(key,c);return c}
 
 
@@ -2478,7 +2478,7 @@ const GLR=(()=>{const c=document.getElementById('g');let gl=null;try{gl=c&&(c.ge
    gl.uniform2f(ur,W,H);gl.bufferSubData(gl.ARRAY_BUFFER,0,F.subarray(0,n*30));gl.enable(gl.SCISSOR_TEST);
    V.forEach((v,i)=>{const e=i+1<V.length?V[i+1].s:n;if(e<=v.s)return;gl.scissor(v.x,H-(v.y+v.h),v.w,v.h);gl.drawArrays(gl.TRIANGLES,v.s*6,(e-v.s)*6)})}}})();
 const colQ=c=>{const m=/^hsl\((\d+)/.exec(c);return m?'hsl('+(Math.round(m[1]/20)*20)+c.slice(c.indexOf(',')):c}; // couleurs arc-en-ciel regroupées (sinon l'atlas déborde)
-function glBul(col,r,o){col=colQ(col);const rr=Math.round(r*2)/2,p=Math.ceil(rr+3);return GLR.spr('b'+col+rr+'|'+o,p*2,p*2,x=>{x.globalAlpha=.8;x.fillStyle=COLS[o]||'#fff';x.beginPath();x.arc(p,p,rr+1.8,0,TAU);x.fill();x.globalAlpha=1;x.fillStyle=col;x.beginPath();x.arc(p,p,rr,0,TAU);x.fill();if(rr>=3){x.fillStyle='rgba(255,255,255,.85)';x.beginPath();x.arc(p,p,rr*.5,0,TAU);x.fill()}})}
+function glBul(col,r,o){col=colQ(col);const rr=Math.round(r*2)/2,p=Math.ceil(rr+5);return GLR.spr('b'+col+rr+'|'+o,p*2,p*2,x=>{x.globalAlpha=.62;x.fillStyle='#05030c';x.beginPath();x.arc(p,p,rr+3.4,0,TAU);x.fill();x.globalAlpha=.8;x.fillStyle=COLS[o]||'#fff';x.beginPath();x.arc(p,p,rr+1.8,0,TAU);x.fill();x.globalAlpha=1;x.fillStyle=col;x.beginPath();x.arc(p,p,rr,0,TAU);x.fill();if(rr>=3){x.fillStyle='rgba(255,255,255,.85)';x.beginPath();x.arc(p,p,rr*.5,0,TAU);x.fill()}})}
 function glHeavy(c,r,o,refl){c=colQ(c);const rr=Math.round(r),rf=Math.min(7,refl||0),p=Math.ceil(rr*1.45+4+rf*2);return GLR.spr('h'+c+rr+'|'+o+'|'+rf,p*2,p*2,x=>{x.fillStyle=c;x.beginPath();x.arc(p,p,rr,0,TAU);x.fill();x.strokeStyle=rf?'#6ff':'#fff';x.lineWidth=2+rf*2;x.stroke();if(COLS[o]){x.strokeStyle=COLS[o];x.lineWidth=2.5;x.beginPath();x.arc(p,p,rr+3,0,TAU);x.stroke()}x.globalAlpha=.1;x.beginPath();x.arc(p,p,rr*1.45,0,TAU);x.fill()})}
 function glShape(b){const col=colQ(b.c||LCOLS[b.owner]),rr=Math.round(b.r*2)/2,p=Math.ceil(rr*3.4+3);return GLR.spr('s'+b.sh+col+rr+'|'+b.owner+'|'+(b.pill||0),p*2,p*2,x=>{const sv=ctx,sf=frame;ctx=x;frame=0;try{shB({x:p,y:p,r:rr,sh:b.sh,c:col,owner:b.owner,ang:0,pill:b.pill})}finally{ctx=sv;frame=sf}})}
 const shRot=b=>b.sh==='star'?frame*.08+b.x*.01:b.sh==='pill'?(b.ang||0)+frame*.04:(b.ang||0);
@@ -3796,9 +3796,9 @@ const HUB=[
  {k:'opt',t:'OPTIONS',c:'#7fa8ff',d:'Sound, profiles, controls, effects.',f:()=>openSub('OPTIONS',OPTL)},
  {k:'help',t:'HOW TO PLAY',c:'#ff9a3a',d:'Tutorial and full guide.',f:()=>openSub('HOW TO PLAY',HELPL)}];
 const RULESL=()=>MENU.filter(r=>/^(Mode|Fighters|Humans|CPU level|Lives|Timer|Map:|Items:|Cards at once|Teams|Tempo)/.test(r.t()));
-const OPTL=()=>MENU.filter(r=>/^(Effects|Sound…|Profiles…|Controls)/.test(r.t())).concat([{t:()=>'Title screen',f:()=>{mode='title';UITITLE.t0=UNOW()}}]);
+const OPTL=()=>MENU.filter(r=>/^(Effects|Motion|Sound…|Profiles…|Controls)/.test(r.t())).concat([{t:()=>'Title screen',f:()=>{mode='title';UITITLE.t0=UNOW()}}]);
 const HELPL=()=>MENU.filter(r=>/^(How to play|Guide)/.test(r.t()));
-const RDESC={Mode:'CASUAL = your own rules. COMPETITIVE = 4 lives, 5 minutes, no items.',Fighters:'How many fighters are in the arena (2 to 4).',Humans:'How many of them are real players; the rest are CPUs.','CPU level':'9 = superhuman: perfect parries and reactions.',Lives:'Number of stocks per fighter.',Timer:'Match length in minutes (OFF = until the last one standing).',Map:'Arena. Custom maps from the Map maker appear here too.',Items:'Item cards that spawn during the match.','Cards at once':'Maximum item cards on the map at the same time.',Teams:'Enter to choose the team of each player.',Tempo:'How fast cards spawn and how frantic the match gets.',Effects:'REDUCED = fewer flashes and particles (photosensitive players).','Sound…':'Volumes and custom music for each screen.','Profiles…':'Player names, colors and name animations.',Controls:'Keyboard / gamepad bindings.','How to play':'Interactive tutorial.',Guide:'Every mechanic explained.','Title screen':'Back to the title screen.'};
+const RDESC={Mode:'CASUAL = your own rules. COMPETITIVE = 4 lives, 5 minutes, no items.',Fighters:'How many fighters are in the arena (2 to 4).',Humans:'How many of them are real players; the rest are CPUs.','CPU level':'9 = superhuman: perfect parries and reactions.',Lives:'Number of stocks per fighter.',Timer:'Match length in minutes (OFF = until the last one standing).',Map:'Arena. Custom maps from the Map maker appear here too.',Items:'Item cards that spawn during the match.','Cards at once':'Maximum item cards on the map at the same time.',Teams:'Enter to choose the team of each player.',Tempo:'How fast cards spawn and how frantic the match gets.',Effects:'REDUCED = fewer flashes and particles (photosensitive players).',Motion:'SMOOTH = fluid on 120/144 Hz screens (shows the last frame blended, about 8 ms later). STRICT 60 = raw frames. AUTO = smooth only on fast screens.','Sound…':'Volumes and custom music for each screen.','Profiles…':'Player names, colors and name animations.',Controls:'Keyboard / gamepad bindings.','How to play':'Interactive tutorial.',Guide:'Every mechanic explained.','Title screen':'Back to the title screen.'};
 // placement : grande carte à gauche, deux cartes à droite, ruban de petites cartes en bas
 function hubLayout(){const m=Math.min(W,H*1.9),x0=W/2-m*.47,y0=H*.17,ch=H*.5,R=[];
  R.push({i:0,x:x0,y:y0,w:m*.52,h:ch,rot:-.035,big:1});R.push({i:1,x:x0+m*.55,y:y0,w:m*.39,h:ch*.48,rot:.025});R.push({i:2,x:x0+m*.53,y:y0+ch*.53,w:m*.39,h:ch*.47,rot:-.02});
@@ -4072,6 +4072,21 @@ function ifxOver(){const now=performance.now(),dt=Math.min(3,(now-(IFX.t||now))/
 {const C1=cpuInput;cpuInput=(p,o)=>{const I=C1(p,o);if(p.shotT===3&&o&&o.state!=='dead'&&!CX.don){const a=aimPt(o),d=Math.hypot(a[0]-p.x,a[1]-p.y),t=Math.min(70,d/4)*.7;p.maim=[a[0]+o.vx*t,a[1]+o.vy*t]}else if(p.cpu)p.maim=null;return I}}
 // ---- ralenti du KO / gel d'impact : seul le pas de base tourne (les surcouches d'items ne doivent pas agir sur une frame figée, sinon boucle infinie parry/ralenti)
 {const S0=step;step=()=>{if(mode==='game'&&(hitstop>0||(slow>0&&(slow-1)%3)))return STEP0();return S0()}}
+// ---- rendu lissé (écrans 120/144 Hz) : la partie reste à 60 étapes/s ; à l'affichage seulement, positions interpolées entre les deux dernières étapes
+let MOTION=(()=>{try{return +localStorage.getItem('sf_motion')||0}catch(e){return 0}})(); // 0 auto · 1 lissé · 2 strict 60
+const IP=new WeakMap(),IPL=()=>[P,B,ENT,ORBS,FAIRIES];let ipT=0,ipD=STEP;
+const ipOn=()=>mode==='game'&&(MOTION===1||MOTION===0&&fps>75);
+{const S0=step;step=()=>{if(mode==='game'&&!(hitstop>0||slow>0&&(slow-1)%3)){for(const L of IPL())for(const o of L)if(o&&typeof o.x==='number'){let r=IP.get(o);if(!r){r=[0,0];IP.set(o,r)}r[0]=o.x;r[1]=o.y}ipT=performance.now();ipD=STEP*(slow>0?3:1)/(CX.mer?2:1)}return S0()}}
+{const R0=render;render=()=>{if(!ipOn())return R0();const a=Math.min(1,Math.max(0,(performance.now()-ipT)/ipD)),sv=[];
+ for(const L of IPL())for(const o of L){const r=o&&IP.get(o);if(!r)continue;const dx=o.x-r[0],dy=o.y-r[1];if(dx*dx+dy*dy>14400||!dx&&!dy)continue;sv.push(o,o.x,o.y);o.x=r[0]+dx*a;o.y=r[1]+dy*a}
+ try{R0()}finally{for(let i=0;i<sv.length;i+=3){sv[i].x=sv[i+1];sv[i].y=sv[i+2]}}}}
+{const i=MENU.findIndex(r=>/^Effects/.test(r.t()));if(i>=0)MENU.splice(i+1,0,{t:()=>'Motion: '+['AUTO','SMOOTH','STRICT 60'][MOTION]+'  ◀ ▶',lr:d=>{MOTION=(MOTION+(d>0?1:2))%3;try{localStorage.setItem('sf_motion',MOTION)}catch(e){}}})}
+// ---- lisibilité : les lignes de vitesse (parry) laissent un espace clair autour de chaque combattant ; les mini-panneaux de vie s'estompent au corps à corps
+const GAD=typeof CanvasRenderingContext2D!=='undefined'&&Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype,'globalAlpha');
+function withAlpha(k,f){const c=ctx;if(!GAD||!(c instanceof CanvasRenderingContext2D)||k>=1)return f();Object.defineProperty(c,'globalAlpha',{configurable:true,get(){return GAD.get.call(c)},set(v){GAD.set.call(c,v*k)}});try{return f()}finally{delete c.globalAlpha}}
+{const F0=focusLines;focusLines=a=>{const v=typeof MVIEW!=='undefined'&&Object.values(MVIEW)[0];if(!v||Object.keys(MVIEW).length>1)return F0(a);ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);
+ for(const q of P)if(q.state!=='dead'){const x=(q.x-v.cx)*v.sc+v.ox,y=(q.y-v.cy)*v.sc+v.oy,r=Math.max(70,bodyR(q)*v.sc*3.2);ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,TAU,true)}ctx.clip('evenodd');try{F0(a)}finally{ctx.restore()}}}
+{const M0=miniHUD;miniHUD=(q,...a)=>{const near=P.some(o=>o!==q&&o.state!=='dead'&&Math.hypot(o.x-q.x,o.y-q.y)<150);return near?withAlpha(.4,()=>M0(q,...a)):M0(q,...a)}}
 // ---- porte audio : le navigateur bloque le son tant qu'il n'y a ni clic ni touche (la manette ne compte pas) → écran clair « clique pour jouer »
 let AGT=0,AGN=0;for(const e of['pointerdown','mousedown','keydown','touchstart'])addEventListener(e,()=>{AGT=performance.now()},true);
 const aLock=()=>AC&&AC.state!=='running';
