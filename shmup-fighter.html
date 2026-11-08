@@ -4018,13 +4018,13 @@ function ifxAura(q,st,c1,c2,R,k){const t=frame;ctx.lineWidth=2;
 function ifxUnder(){const lo=fxLow||perfLow,N=lo?6:14;ctx.save();ctx.globalCompositeOperation='lighter';
  for(const q of P){if(q.state==='dead')continue;const R=bodyR(q),acts=(q.acts||[]).filter(a=>frame-a.f<a.T&&ITEMK[a.k]);
   for(const a of q.acts||[]){const key=q.id+':'+a.k+':'+a.f;if(frame-a.f<12&&!IFX.seen.has(key)){IFX.seen.add(key);if(IFX.seen.size>300)IFX.seen.clear();const r=IFX.R[a.k]||['spark',(ITEMK[a.k]||{}).c||'#fff','#fff'];
-   ifxEmit(r[0],q.x,q.y,r[1],r[2],lo?25:70,R,1);ifxEmit('spark',q.x,q.y,'#fff',r[1],lo?8:24,R,1);IFX.rp.push({k:'ring',x:q.x,y:q.y,t:34,T:34,c:ifxC(r[1]),s:260},{k:'ring',x:q.x,y:q.y,t:24,T:24,c:ifxC(r[2]||'#fff'),s:150},{k:'ring',x:q.x,y:q.y,t:44,T:44,c:ifxC(r[1]),s:420})}}
+   ifxEmit(r[0],q.x,q.y,r[1],r[2],lo?12:35,R,1);ifxEmit('spark',q.x,q.y,'#fff',r[1],lo?4:10,R,1);IFX.rp.push({k:'ring',x:q.x,y:q.y,t:30,T:30,c:ifxC(r[1]),s:150},{k:'ring',x:q.x,y:q.y,t:22,T:22,c:ifxC(r[2]||'#fff'),s:90})}}
   const fl=[];if(q.blade>0)fl.push('yellow');if(q.star>0)fl.push('elixir');if(q.giant>0)fl.push('oni');if(q.mirror>0)fl.push('mirror');if(q.clone>0)fl.push('clone');if(q.spk>0)fl.push('spark');
   const ks=[...new Set([...acts.map(a=>a.k),...fl])];if(!ks.length)continue;
   const r0=IFX.R[ks[0]]||['spark',(ITEMK[ks[0]]||{}).c||'#fff','#fff'],c=ifxC(r0[1]),tp=ifxTr(q,q.x,q.y,N);
   for(let i=2;i<tp.length/2;i+=2){const u=1-i/(tp.length/2);ctx.globalAlpha=u*.3;ctx.fillStyle=c;ctx.beginPath();ctx.arc(tp[i*2],tp[i*2+1],R*(.6+.4*u),0,TAU);ctx.fill()}
   ifxGlow(q.x,q.y,R*3.2,c,.3+.1*Math.sin(frame*.3));
-  for(const k of ks.slice(0,3)){const r=IFX.R[k]||['spark',(ITEMK[k]||{}).c||'#fff','#fff'];ifxAura(q,r[0],r[1],r[2],R,1);if(frame%2===0||!lo)ifxEmit(r[0],q.x,q.y,r[1],r[2],1,R,0)}
+  for(const k of ks.slice(0,3)){const r=IFX.R[k]||['spark',(ITEMK[k]||{}).c||'#fff','#fff'];ifxAura(q,r[0],r[1],r[2],R,1);if(frame%(lo?6:3)===0)ifxEmit(r[0],q.x,q.y,r[1],r[2],1,R,0)}
   if(q.blade>0){const h=ifxTr(q,q.bA,0,8,IFX.bt);ctx.lineCap='round';for(let i=1;i<h.length/2;i++)for(let k=0;k<2;k++){const a=h[i*2]+k*Math.PI,u=1-i/(h.length/2),cc=Math.cos(a),s=Math.sin(a);ctx.globalAlpha=u*.45;ctx.strokeStyle='#ffe23a';ctx.lineWidth=10*u+2;ctx.beginPath();ctx.moveTo(q.x+cc*26,q.y+s*26);ctx.lineTo(q.x+cc*62,q.y+s*62);ctx.stroke()}
    if(!lo)for(let k=0;k<2;k++){const a=q.bA+k*Math.PI;ifxEmit('spark',q.x+Math.cos(a)*62,q.y+Math.sin(a)*62,'#fff3a0','#fff',1,2,0)}}
   if(q.state==='rifle'&&!lo&&Math.random()<.5){const a=q.aim+(Math.random()-.5)*.3;ifxEmit('star',q.x+Math.cos(a)*30,q.y+Math.sin(a)*30,'#fff','#f44',1,2,0)}}
@@ -4046,7 +4046,7 @@ function ifxOver(){const now=performance.now(),dt=Math.min(3,(now-(IFX.t||now))/
   else if(p.k!=='ring'){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.pow(.94,dt);p.vy=p.vy*Math.pow(.94,dt)+p.g*dt;p.r+=p.vr*dt}
   if(p.k==='shadow'){ctx.globalCompositeOperation='source-over';ifxDraw(p,u);ctx.globalCompositeOperation='lighter'}else ifxDraw(p,u)}
  L.length=w;ctx.restore();ctx.globalAlpha=1}
-{const D0=drawWorldItems;drawWorldItems=function(){ifxUnder();D0();ifxOver()}}
+{const D0=drawWorldItems,GA=Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype,'globalAlpha'),dim=f=>{const c=ctx;Object.defineProperty(c,'globalAlpha',{configurable:true,get(){return GA.get.call(c)},set(v){GA.set.call(c,v*.38)}});try{f()}finally{delete c.globalAlpha;c.globalAlpha=1}};drawWorldItems=function(){dim(ifxUnder);D0();dim(ifxOver)}}
 // ---- porte audio : le navigateur bloque le son tant qu'il n'y a ni clic ni touche (la manette ne compte pas) → écran clair « clique pour jouer »
 let AGT=0,AGN=0;for(const e of['pointerdown','mousedown','keydown','touchstart'])addEventListener(e,()=>{AGT=performance.now()},true);
 const aLock=()=>AC&&AC.state!=='running';
