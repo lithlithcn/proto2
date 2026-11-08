@@ -196,7 +196,9 @@ if(AC)for(const k in SFXD){const b=atob(SFXD[k]),u=new Uint8Array(b.length);for(
 const ALIAS={se_select00:'select00'}; // secours tant que ces 2 fichiers manquent // secours si un fichier manque
 const SFXG={"se_changeitem":1.42,"cancel00":0.62,"roll":2.67,"loadvrai2":1.45,"tan00":0.6,"tan02":0.6,"tan01":0.6,"saigyou ayakashi spawn":3.06,"coin":0.6,"icebreak":1.45,"slice":3.83,"confirm":3.35,"select2":1.59,"weakslice":5.01,"electricity":1.83,"voosh":1.45,"bubble":3.08,"bonus":5.01,"windblow":2.58,"bombtick":1.74};
 function sfx(k,vol=1,rate=1){vol*=SFXG[k]||1;const buf=SFX[k]||SFX[ALIAS[k]];if(!AC||!buf||AC.state!=='running')return;
- const s=AC.createBufferSource(),g=AC.createGain();s.buffer=buf;s.playbackRate.value=rate;g.gain.value=vol*T.VOL;s.connect(g).connect(AC.destination);s.start();return s}
+ const s=AC.createBufferSource(),g=AC.createGain();s.buffer=buf;s.playbackRate.value=rate;g.gain.value=vol*T.VOL;s.connect(g);if(mode==='game'&&TSTOP>0){const r=revNode();const d=AC.createGain();d.gain.value=.5;g.connect(d).connect(AC.destination);g.connect(r)}else g.connect(AC.destination);s.start();return s}
+let REV=null;function revNode(){if(REV)return REV;const n=AC.sampleRate*2.6|0,b=AC.createBuffer(2,n,AC.sampleRate);let x=12345;for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<n;i++){x=(x*1103515245+12345)&0x7fffffff;d[i]=(x/0x3fffffff-1)*Math.pow(1-i/n,3.2)*(i<AC.sampleRate*.012?i/(AC.sampleRate*.012):1)}}
+ const cv=AC.createConvolver();cv.buffer=b;const w=AC.createGain();w.gain.value=.9;cv.connect(w).connect(AC.destination);REV=cv;return cv}
 const sfxDmg=v=>{if(frame-sDmg<3)return;sDmg=frame;const f=1-clamp(v.hp/T.HP,0,1);sfx('damage00',T.SFX_DMG_MIN+(T.SFX_DMG_MAX-T.SFX_DMG_MIN)*f,1+.1*f)}; // plus aigu (max +10 %) quand la vie baisse
 const brk=()=>{if(frame-sBrk>4){sBrk=frame;sfx('se_enep00',.6)}}; // grosse balle détruite
 const flash=(a,c='#fff')=>{flashS=Math.max(flashS,a);flashCol=c};
@@ -815,7 +817,7 @@ function give0(p,type){const it=ITEMS.find(i=>i.k===type);p.lastIt=type;
  else if(type==='purple')WARP=600;
  else if(type==='mirror')p.mirror=480;else if(type==='oni')p.giant=600;else if(type==='clone')p.clone=600;else if(type==='elixir')p.star=360;else if(type==='camera')p.cam=3;
  else if(type==='spark'){p.spk=390;p.spkA=p.aim;p.rsrc=sfx('charge',.6);sfx('aimreal',1.7)}
- else if(type==='world'){CX.zaw={o:p.id,t:180};sfx('timestop',1);big('TIME... STOP!','#00d0a0',50)}
+ else if(type==='world'){CX.zaw={o:p.id,t:180};sfx('charge',.6);big('TIME... STOP!','#00d0a0',50)}
  else if(type==='gap')HOLES.push({x:item.x,y:item.y,t:360,o:p.id,a:0});
  else if(type==='freeze'){for(const b of B)if(b.owner!==p.id){b.fz=1;b.c='#bff6ff'}FRZ={t:90,o:p.id};big('PERFECT FREEZE!','#a8f0ff',56);sfx('se_kira00');sfx('get_freezed',.6);FRZQ={o:p.id,n:2,f:frame+130}}
  else if(type==='bumpers')for(let i=0;i<5;i++){let x,y,n=0;do{x=150+rng()*(T.MAP_W-300);y=150+rng()*(T.MAP_H-300)}while(n++<20&&P.some(q=>Math.hypot(q.x-x,q.y-y)<120));BUMPS.push({x,y,r:26,t:420,o:p.id,hit:0,vy:(rng()<.5?-1:1)*.7})}
@@ -2018,7 +2020,7 @@ function musPick(scr){const L=MUS.filter(t=>t.scr===scr),C=L.length>1?L.filter(t
 function musPlay(t){if(!MAUD)return;MCUR=t;if(!t){MAUD.pause();return}MAUD.src=t.url;MAUD.currentTime=0;MFADE=0;MAUD.play().catch(()=>{MAUD.pend=1})}
 if(MAUD){MAUD.onended=()=>musPlay(musPick(MSCR));addEventListener('pointerdown',()=>{if(MAUD.pend&&MCUR){MAUD.pend=0;MAUD.play().catch(()=>{})}});addEventListener('keydown',()=>{if(MAUD.pend&&MCUR){MAUD.pend=0;MAUD.play().catch(()=>{})}})}
 function musTick(){if(!MAUD)return;const sc=musScr();if(sc!==MSCR&&!(mode==='sub'&&MCUR&&MCUR.scr!==MSCR)){MSCR=sc;musPlay(musPick(sc))}
- MFADE=Math.min(1,MFADE+.02);const kd=(performance.now()-KOMT)/1000,ke=kd<0?0:kd<.12?kd/.12:kd<1.1?1:kd<2.1?1-(kd-1.1):0;MDUCK+=((mode==='game'&&CX.don?1:0)-MDUCK)*.05;MAUD.volume=clamp(VOLS.music*VOLS.master*ENDK*MFADE*(1-.45*ke)*(1-.75*MDUCK),0,1);const pr=+(1-.32*ke).toFixed(2);if(MAUD.playbackRate!==pr){try{MAUD.preservesPitch=false;MAUD.mozPreservesPitch=false;MAUD.playbackRate=pr}catch(e){}}}
+ MFADE=Math.min(1,MFADE+.02);const kd=(performance.now()-KOMT)/1000,ke=kd<0?0:kd<.12?kd/.12:kd<1.1?1:kd<2.1?1-(kd-1.1):0;MDUCK+=((mode==='game'&&CX.don?1:0)-MDUCK)*.05;MAUD.volume=clamp(VOLS.music*VOLS.master*ENDK*MFADE*(1-.45*ke)*(1-.75*MDUCK),0,1);if(mode==='game'&&TSTOP>0){if(!MAUD.paused){MAUD.pause();MAUD.tsP=1}}else if(MAUD.tsP){MAUD.tsP=0;MAUD.play().catch(()=>{})}const pr=+(1-.32*ke).toFixed(2);if(MAUD.playbackRate!==pr){try{MAUD.preservesPitch=false;MAUD.mozPreservesPitch=false;MAUD.playbackRate=pr}catch(e){}}}
 let KOMT=-1e9,MDUCK=0;
 // ---- éditeur de cartes : grille, murs, téléporteurs, item permanent
 const CS=40;let CMAPS=[],CMAP=null,WG=null,TPS=[],MK=null;try{CMAPS=JSON.parse(localStorage.getItem('sf_maps')||'[]')||[]}catch(e){}
@@ -2694,7 +2696,7 @@ function mtnDraw(){const Mn=CX.mtn;if(!Mn)return;const x0=Mn.x-Mn.w/2,H2=T.MAP_H
   ctx.strokeStyle='rgba(150,190,255,.45)';ctx.lineWidth=2;for(let k=0;k<60;k++){const x=(k*97.3)%T.MAP_W,y=((frame*9+k*173)%(H2+80))-40;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-3,y+18);ctx.stroke()}}
  ctx.restore()}
 // --- Time Stop : 3 s d'attente (son), puis 4 s d'arrêt, de vrais couteaux
-{const S0=step;step=()=>{const w0=WT;S0();if(mode!=='game'||WT===w0)return;const Z=CX.zaw;if(Z){if(--Z.t<=0){CX.zaw=null;const p=P[Z.o];if(p&&p.state!=='dead'){TSTOP=240;TSO=p.id;big('THE WORLD!','#00d0a0',80);WAVES.push({x:p.x,y:p.y,t:30,T:30,spd:60,th:120,inv:1});shake=Math.min(40,shake+20);flash(.3,'#fff')}}}
+{const S0=step;step=()=>{const w0=WT;S0();if(mode!=='game'||WT===w0)return;const Z=CX.zaw;if(Z){if(--Z.t<=0){CX.zaw=null;const p=P[Z.o];if(p&&p.state!=='dead'){TSTOP=240;TSO=p.id;sfx('timestop',1);big('THE WORLD!','#00d0a0',80);WAVES.push({x:p.x,y:p.y,t:30,T:30,spd:60,th:120,inv:1});shake=Math.min(40,shake+20);flash(.3,'#fff')}}}
  if(TSTOP>0&&frame%3===0){const o=P[TSO];if(o)for(const q of P)if(q!==o&&q.state!=='dead'&&B.length<T.MAX_B)for(let j=0;j<2;j++){const a=rng()*TAU,r=110+rng()*170;B.push({x:q.x+Math.cos(a)*r,y:q.y+Math.sin(a)*r,vx:-Math.cos(a)*9,vy:-Math.sin(a)*9,r:6,owner:o.id,heavy:1,m:IM.sknife,mult:1,dist:999,life:200,dead:0,seen:0,home:0,gr:0,c:'#e8f4ff',knife:1})}}
  // gaps : traînées
  for(const p of P)if(p.state!=='dead'){const w=p.pwPrev??p.power;if(Math.floor(p.power+1e-9)>Math.floor(w+1e-9))sfx('bonus',.7);p.pwPrev=p.power;if(p.stPrev!==undefined&&p.stocks>p.stPrev)sfx('bonus',.8);p.stPrev=p.stocks}
@@ -3231,7 +3233,7 @@ function render(){musTick();if(OC)OC.clearRect(0,0,W,H);if(GLR){GLR.begin();if(m
  tDraw();if(GLR){GLR.flush();ctx=CTX0}}
 
 function setFilter(f){if(f!==cssF&&cv.style){cssF=f;cv.style.filter=f;const g=document.getElementById('g');if(g&&g.style)g.style.filter=f}}
-function screenFilter(){setFilter(slow>0&&!fxLow&&!perfLow?'saturate(2.2) contrast(1.3)':'')} // filtre plein écran seulement pendant le ralenti (la luminosité passe par un calque, moins coûteux)
+function screenFilter(){setFilter(slow>0&&!fxLow&&!perfLow?'saturate(2.2) contrast(1.3)':'');const g=document.getElementById('g'),w=mode==='game'&&TSTOP>0?((cssF?cssF+' ':'')+'invert(1)'):(cssF||'');if(g&&g.style&&g.style.filter!==w)g.style.filter=w} // filtre plein écran seulement pendant le ralenti (la luminosité passe par un calque, moins coûteux)
 function focusLines(a){ // lignes de vitesse (manga) depuis les bords
  const cx=W/2,cy=H/2,R=Math.hypot(W,H)/2;ctx.strokeStyle='#fff';ctx.globalAlpha=Math.min(1,a)*.9;ctx.lineWidth=2+a*2;ctx.beginPath();
  for(let i=0;i<70;i++){const t=Math.random()*TAU,r0=R*(.4+Math.random()*.35);ctx.moveTo(cx+Math.cos(t)*R,cy+Math.sin(t)*R);ctx.lineTo(cx+Math.cos(t)*r0,cy+Math.sin(t)*r0)}
@@ -3308,7 +3310,7 @@ function drawView(v){
   if(w.inv&&!fxLow){ctx.globalCompositeOperation='difference';ctx.fillStyle='#fff';ctx.fill();ctx.globalCompositeOperation='source-over'}
   else{ctx.globalAlpha=f*(fxLow?.2:.6);ctx.fillStyle=w.c||'#fff';ctx.fill();ctx.globalAlpha=1}}
  if(invF>0&&!fxLow){ctx.globalCompositeOperation='difference';ctx.fillStyle='#fff';ctx.fillRect(L-60,Tp-60,vw+120,vh+120);ctx.globalCompositeOperation='source-over'}
- if(TSTOP>0){ctx.globalCompositeOperation='saturation';ctx.fillStyle='#888';ctx.fillRect(L-60,Tp-60,vw+120,vh+120);ctx.globalCompositeOperation='source-over';drawP(P[TSO])} // The World : monde gris
+ if(TSTOP>0){ctx.globalCompositeOperation='difference';ctx.fillStyle='#fff';ctx.fillRect(L-60,Tp-60,vw+120,vh+120);ctx.globalCompositeOperation='source-over';drawP(P[TSO])} // The World : monde gris
  if(GLR&&OC)ovl(v,()=>{drawTags(L,R);drawDanger()});else drawTags(L,R);if(debug)drawDebugWorld();
  ctx.restore();
  for(const q of v.fixed?P:[p])if(q.state!=='dead'&&q.hp<T.HP*.3){ // vignette rouge quand la vie est basse
