@@ -4150,10 +4150,10 @@ const devList=()=>{const L=['k0','k1'];pads().forEach((g,j)=>L.push('p'+j));retu
 const devName=d=>d==='k0'?'KEYBOARD 1':d==='k1'?'KEYBOARD 2':'PAD '+(+d.slice(1)+1);
 function devIn(d){const I={x:0,y:0,a:0,b:0,s:0};if(d[0]==='k'){const m=KB[+d[1]];I.x=kd(m.right)-kd(m.left);I.y=kd(m.down)-kd(m.up);I.a=kd(m.shot)||d==='k0'&&(kd('Enter')||kd('Space'));I.b=kd(m.parry)||d==='k0'&&kd('Escape');I.s=d==='k0'&&kd('Enter')}
  else{const g=pads()[+d.slice(1)];if(!g)return I;const bt=n=>g.buttons[n]&&g.buttons[n].pressed;I.x=(Math.abs(g.axes[0]||0)>.5?Math.sign(g.axes[0]):0)||(bt(15)?1:bt(14)?-1:0);I.y=(Math.abs(g.axes[1]||0)>.5?Math.sign(g.axes[1]):0)||(bt(13)?1:bt(12)?-1:0);I.a=bt(0);I.b=bt(1);I.s=bt(9)}return I}
-function cselOpen(){CSEL.sl=[0,1,2,3].map(i=>({dev:null,ty:(SELTY&&SELTY[i])||0,rd:false}));CSEL.pv={};CSEL.cd=0;CSEL.t0=UNOW();for(const d of devList())CSEL.pv[d]=devIn(d);mode='csel';sfx('ok00')}
+function cselOpen(){CSEL.sl=[0,1,2,3].map(i=>({dev:null,ty:SELTY&&SELTY[i]>=CH0?SELTY[i]:CHL[i%CHL.length],rd:false}));CSEL.pv={};CSEL.cd=0;CSEL.t0=UNOW();for(const d of devList())CSEL.pv[d]=devIn(d);mode='csel';sfx('ok00')}
 function cselTick(){const S=CSEL.sl;for(const d of devList()){const I=devIn(d),p=CSEL.pv[d]||{},e=k=>I[k]&&!p[k];CSEL.pv[d]=I;let i=S.findIndex(s=>s.dev===d);
   if(i<0){if(e('a')){const n=S.findIndex(s=>!s.dev);if(n>=0){S[n].dev=d;S[n].rd=false;if(nP<n+1)nP=n+1;sfx('joined',.7)}}else if(e('b')&&!S.some(s=>s.dev)){mode='menu';sfx('cancel00')}continue}
-  const s=S[i];if(!s.rd&&I.x&&I.x!==p.x){s.ty=(s.ty+(I.x>0?1:3))%4;sfx('se_select00',.5)}
+  const s=S[i];if(!s.rd&&I.x&&I.x!==p.x){{const j=Math.max(0,CHL.indexOf(s.ty));s.ty=CHL[(j+(I.x>0?1:CHL.length-1))%CHL.length]}sfx('se_select00',.5)}
   if(e('a')){if(!s.rd){s.rd=true;sfx('ok00')}}if(e('b')){if(s.rd)s.rd=false;else{s.dev=null;sfx('cancel00')}}if(e('s')&&s.rd)CSEL.cd=Math.min(CSEL.cd,1)}
  const J=S.filter(s=>s.dev);if(J.length&&J.every(s=>s.rd)){if(!CSEL.cd)CSEL.cd=50;if(--CSEL.cd<=0)cselGo()}else CSEL.cd=0}
 function cselGo(){const J=CSEL.sl.filter(s=>s.dev);nH=J.length;if(nP<nH)nP=nH;DEVMAP=J.map(s=>s.dev);SELTY=[...J.map(s=>s.ty),...CSEL.sl.filter(s=>!s.dev).map(()=>null)];saveOpts();sfx('title',1);start('game')}
@@ -4163,9 +4163,8 @@ function drawCsel(){cselTick();if(mode!=='csel')return;UIC.acc='#ff3355';uiBG('S
   ctx.fillStyle=c;ctx.font='bold '+Math.round(H*.05)+'px sans-serif';ctx.fillText((ACC.cb?CBS[i]+' ':'')+'P'+(i+1),x+w/2,y0+H*.08);
   if(s.dev){ctx.fillStyle='#ccd';ctx.font=Math.round(H*.02)+'px monospace';ctx.fillText(devName(s.dev),x+w/2,y0+H*.12);
    const r=w*.22,cx=x+w/2,cy=y0+ch*.42;ctx.fillStyle=c;ctx.globalAlpha=.25;ctx.beginPath();ctx.arc(cx,cy,r*1.3,0,TAU);ctx.fill();ctx.globalAlpha=on?1:.35;ctx.strokeStyle=c;ctx.lineWidth=4;ctx.beginPath();ctx.arc(cx,cy,r,0,TAU);ctx.stroke();
-   for(let k=0;k<5;k++){const a=(k-2)*[.28,.05,.4,0][s.ty],d=r*(.3+((UNOW()*1.2+k*.17)%1)*1.75);ctx.fillStyle=LCOLS[i];ctx.beginPath();ctx.arc(cx-r*.9+Math.cos(a)*d,cy+Math.sin(a)*d+(s.ty===3?(k-2)*12:0),s.ty===1?3:5,0,TAU);ctx.fill()}
-   ctx.fillStyle='#fff';ctx.font='bold '+Math.round(H*.034)+'px sans-serif';ctx.fillText((s.rd?'':'◀ ')+SHOTS[s.ty].name+(s.rd?'':' ▶'),x+w/2,y0+ch*.72);ctx.fillStyle='#aab';ctx.font=Math.round(H*.017)+'px monospace';ctx.fillText(SHD[s.ty],x+w/2,y0+ch*.79,w-10);
-   ctx.font='bold '+Math.round(H*.028)+'px sans-serif';ctx.fillStyle=s.rd?'#5cff8a':'#ffd23a';ctx.fillText(s.rd?'READY!':'A / ATTACK: READY',x+w/2,y0+ch*.92)}
+   {const C=CHR[s.ty-CH0];if(C){const fq={x:cx,y:cy,aim:-Math.PI/4,chM:(UNOW()/1.5|0)%3,chC:4,chG:70,chS:3,chT:0,state:'idle',fx:{}};ctx.save();ctx.translate(cx,cy);ctx.scale(2.2,2.2);ctx.translate(-cx,-cy);ctx.fillStyle='#222';ctx.strokeStyle=C.col;ctx.lineWidth=3;ctx.beginPath();ctx.arc(cx,cy,T.BODY_R,0,TAU);ctx.fill();ctx.stroke();C.draw(fq,T.BODY_R);ctx.restore()}}ctx.fillStyle='#fff';ctx.font='bold '+Math.round(H*.034)+'px sans-serif';ctx.fillText((s.rd?'':'◀ ')+SHOTS[s.ty].name+(s.rd?'':' ▶'),x+w/2,y0+ch*.72);{const C=CHR[s.ty-CH0];ctx.fillStyle=C?C.col:'#aab';ctx.font='bold '+Math.round(H*.016)+'px monospace';ctx.fillText(C?C.role:'',x+w/2,y0+ch*.78,w-10);if(C&&!s.rd){ctx.fillStyle='#99a';ctx.font=Math.round(H*.0135)+'px monospace';const L=wrapT(C.d,w-16).slice(0,3);L.forEach((l,j)=>ctx.fillText(l,x+w/2,y0+ch*.82+j*H*.019,w-10))}}
+   ctx.font='bold '+Math.round(H*.028)+'px sans-serif';ctx.fillStyle=s.rd?'#5cff8a':'#ffd23a';ctx.fillText(s.rd?'READY!':'A / ATTACK: READY',x+w/2,y0+ch*.965)}
   else{ctx.fillStyle=(UNOW()*2|0)%2&&!S.some(q=>q.dev)?'#fff':'#ccd';ctx.font='bold '+Math.round(H*.028)+'px sans-serif';ctx.fillText(i<nP?'CPU  LV '+cpuLv:'—',x+w/2,y0+ch*.45);ctx.font=Math.round(H*.02)+'px monospace';ctx.fillStyle='#aab';ctx.fillText('press A / ATTACK to join',x+w/2,y0+ch*.55)}});
  ctx.globalAlpha=1;ctx.fillStyle='#aab';ctx.font=Math.round(H*.02)+'px monospace';ctx.fillText('Each pad / keyboard: A or Attack = join, then READY  ·  ◀ ▶ shot type  ·  B / Parry = back'+(CSEL.cd?'':'  ·  nobody joined + B = leave'),W/2,H*.86);
  if(CSEL.cd){ctx.fillStyle='#5cff8a';ctx.font='bold '+Math.round(H*.06)+'px sans-serif';ctx.fillText('FIGHT IN '+Math.ceil(CSEL.cd/17),W/2,H*.94)}ctx.restore()}
@@ -4206,6 +4205,176 @@ let emoPad=false;
 {const R0=render;render=()=>{R0();if(mode!=='game'||!NET)return;const g=pads()[0],sel=!!(g&&g.buttons[8]&&g.buttons[8].pressed);if(sel&&!emoPad)emoSend(0);emoPad=sel;const c=OC||CTX0,v=Object.values(MVIEW)[0];c.save();c.setTransform(1,0,0,1,0,0);
  c.textAlign='right';c.font='bold 12px monospace';const r=Math.round(NET.rtt||0);c.fillStyle=r<80?'#5cff8a':r<150?'#ffd23a':'#ff5a5a';c.fillText('PING '+r+' ms',W-14,H-14);
  c.textAlign='center';for(const id in EMO){const e=EMO[id],q=P[id],age=UNOW()-e.t;if(age>2.2||!q||!v){if(age>2.2)delete EMO[id];continue}const x=(q.x-v.cx)*v.sc+v.ox,y=(q.y-v.cy)*v.sc+v.oy-70-age*10;c.globalAlpha=Math.min(1,(2.2-age)*3);c.fillStyle='#fff';c.strokeStyle=COLS[id];c.lineWidth=3;c.font='bold 18px sans-serif';const t=EML[e.k],tw=c.measureText(t).width+18;c.fillRect(x-tw/2,y-18,tw,26);c.strokeRect(x-tw/2,y-18,tw,26);c.fillStyle='#05060c';c.fillText(t,x,y+1)}c.restore()}}
+// ===== PERSONNAGES (vague 1) : chaque perso a son kit complet (tir, gros tir, mêlée, spell, mécanique unique sur Next/Prev, stats). Index = p.shotT (4+)
+const CH0=SHOTS.length;
+const chOf=p=>p&&p.shotT>=CH0?CHR[p.shotT-CH0]:null;
+const chB=(p,a,sp,d,r,life,o)=>{const b=lb(p,a,sp,d,r,life);if(b&&o)Object.assign(b,o);return b};
+// rayon instantané avec avertissement (lisible, imparable seulement en le parant)
+function chBeam(p,a,len,w,dmg,c,tele,kb){const x=p.x,y=p.y,x2=x+Math.cos(a)*len,y2=y+Math.sin(a)*len,o=p.id;
+ const fire=()=>{const P0=P[o];if(!P0||P0.state==='dead')return;ENT.push({k:'lbeam',o,t:12,x,y,x2,y2});sfx('se_lazer00',.5);
+  for(const q of P)if(q!==P0&&q.state!=='dead'&&foeOf(o,q)&&q.inv<=0&&segD(q.x,q.y,x,y,x2,y2)<bodyR(q)+w){if(parryOn(q)){parryFx(q);continue}const st=P0.state;if(st==='atk')P0.state='idle';hit(q,P0,Math.cos(a),Math.sin(a),{dmg,kb:kb||8,stun:28},1,true);if(P0.state==='idle')P0.state=st}}; // le rayon n'est pas un coup de mêlée : pas de bonus de parades
+ if(tele>0){sfx('aimreal',1.6);ENT.push({k:'wbeam',o,t:tele,x,y,x2,y2,c,fire})}else fire()}
+const chCool=(p,n)=>{if((p.chCD||0)>frame)return false;p.chCD=frame+n;return true};
+const chFoe=p=>nearFoe(p.id,p.x,p.y);
+
+const CHR=[
+// ---------------------------------------------------------------- REIMU : polyvalente, simple à prendre en main, défense par barrière
+{k:'reimu',name:'Reimu',col:'#ff3a4a',spd:1,din:1,dout:1,role:'All-rounder · Homing charms + Barrier',
+ d:'Homing charms that never miss far away, a fast needle stream up close. NEXT: BARRIER (1 s) erases small bullets and blocks one heavy hit. Easy to learn, hard to beat.',
+ cd:7,shot(p,a,f,pm,lv){if(f){const n=Math.min(lv+1,4);for(let i=0;i<n;i++){const b=chB(p,a+(i-(n-1)/2)*.05,13,pm*.47*(1+.2*(lv-1))*1.25/n*2,3,70);if(b)b.c='#ffd0d6'}}else{const n=[2,2,3,4][lv-1];for(let i=0;i<n;i++){const b=chB(p,a+(i/(Math.max(1,n-1))-.5)*.9,6,pm*1.1*(1+.2*(lv-1))*1/n,5,110);if(b){b.home=.012;b.c='#ff8090'}}}},
+ heavy:{N:(p,m,a,k)=>spawnH(p,m,a,k,{spd:6,home:.04,r:12}),F:(p,m,a,k)=>{for(const o of[-.12,.12])spawnH(p,m,a+o,k,{spd:13,r:7,k:.6})},B:(p,m,a,k)=>{for(let i=0;i<8;i++)spawnH(p,m,a+i*TAU/8,k,{spd:3,r:9,k:.3,life:240})}},
+ melee:{strong:{start:7,act:6,rec:24,range:52,arc:2.4,dmg:12,kb:15,stun:38,charge:40}},
+ spell:{name:'Barrier「Fantasy Seal」',loop:90,fn(p,o,k){if(k%6===0)for(let i=0;i<6;i++)addB(p,k*.05+i*TAU/6,3.4,0,null,260);if(k%45===0)for(let i=0;i<7;i++){const b0=B.length;addB(p,i*TAU/7,4.5,1,MOVES.heavyN,240);const b=B[b0];if(b)b.home=.035}}},
+ special(p){if(!chCool(p,420))return txt(p.x,p.y-40,'BARRIER '+Math.ceil((p.chCD-frame)/60)+'s','#888',13);p.chT=frame+60;p.chH=1;sfx('blockshield',.8);RINGS.push({x:p.x,y:p.y,r:0,m:70,t:20,c:'#ff9aa8'})},
+ tick(p){if(p.chT>frame){for(const b of B)if(!b.dead&&b.owner!==p.id&&!(TEAMS&&ally(P[b.owner],p))&&Math.hypot(b.x-p.x,b.y-p.y)<62+b.r){if(!b.heavy){b.dead=1}else if(p.chH){p.chH=0;b.dead=1;sfx('shield-break',.6);burst(b.x,b.y,'#ff9aa8',12)}}}},
+ blockShot:p=>p.chT>frame,
+ cpu(p,o,I,d){if((p.chCD||0)<=frame&&B.filter(b=>!b.dead&&b.owner!==p.id&&Math.hypot(b.x-p.x,b.y-p.y)<110).length>=6)I.b.next=true},
+ draw(q,R){const t=frame*.05;ctx.fillStyle='#ff3a4a';for(const s of[-1,1]){ctx.beginPath();ctx.moveTo(q.x,q.y-R*.9);ctx.lineTo(q.x+s*R*1.15,q.y-R*1.55);ctx.lineTo(q.x+s*R*1.05,q.y-R*.75);ctx.fill()}
+  for(let i=0;i<2;i++){const a=t+i*Math.PI,x=q.x+Math.cos(a)*R*1.7,y=q.y+Math.sin(a)*R*1.7;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,4.5,0,TAU);ctx.fill();ctx.fillStyle='#ff3a4a';ctx.beginPath();ctx.arc(x,y,4.5,a,a+Math.PI);ctx.fill()}
+  if(q.chT>frame){ctx.strokeStyle='#ffb0bc';ctx.globalAlpha=.5+.3*Math.sin(frame*.6);ctx.lineWidth=3;ctx.beginPath();ctx.arc(q.x,q.y,62,0,TAU);ctx.stroke();ctx.globalAlpha=1}}},
+
+// ---------------------------------------------------------------- MARISA : canon de verre, lasers, charge du Mini-Spark
+{k:'marisa',name:'Marisa',col:'#ffd23a',spd:1.04,din:1.06,dout:1.08,role:'Glass cannon · Lasers + Mini-Spark',
+ d:'Star missiles spread wide; focused she fires a piercing laser stream (passes through foes). NEXT: charge a MINI-SPARK (telegraphed beam). Hits hardest in the game, but takes 6% more damage.',
+ cd:5,shot(p,a,f,pm,lv){if(f){const b=chB(p,a,17,pm*.62*(1+.22*(lv-1))*1.2,3,60);if(b){b.c='#fff59a';b.lp=1}}else{const n=Math.min(lv+1,4);for(let i=0;i<n;i++){const b=chB(p,a+(i-(n-1)/2)*.22+(rng()-.5)*.05,9.5,pm*.62*(1+.2*(lv-1))*1.3/n*2.1,4,90);if(b)b.c='#ffe37a'}}},
+ heavy:{N:(p,m,a,k)=>spawnH(p,m,a,k,{spd:7,r:12,k:1.05}),F:(p,m,a,k)=>{for(let i=0;i<3;i++)spawnH(p,m,a,k,{spd:15-i*1.5,r:7-i,k:.45,c:'#fff59a'})},B:(p,m,a,k)=>{for(let i=-2;i<=2;i++)spawnH(p,m,a+i*.32,k,{spd:4,r:8,k:.34,life:200})}},
+ melee:{lunge:{start:8,act:5,rec:20,range:46,arc:1.2,dmg:10,kb:11,stun:28,move:10}},
+ spell:{name:'Love Sign「Spark Storm」',loop:90,fn(p,o,k){if(k%4===0)for(let i=0;i<3;i++)addB(p,k*.07+i*TAU/3,5,0,null,220);if(k%60===20&&o)chBeam(p,Math.atan2(o.y-p.y,o.x-p.x),900,22,14,'#fff59a',26,12)}},
+ special(p){if(p.chT>frame)return;if(!chCool(p,600))return txt(p.x,p.y-40,'SPARK '+Math.ceil((p.chCD-frame)/60)+'s','#888',13);p.chT=frame+50;p.chA=p.aim;sfx('charge',.7);chBeam(p,p.aim,1000,24,13,'#fff59a',50,16)},
+ tick(p){if(p.chT>frame){p.vx*=.86;p.vy*=.86;if(p.chT-frame===1){shake=Math.min(40,shake+14);flash(.25,'#fff59a');sfx('masterspark2',.7);p.vx-=Math.cos(p.chA)*6;p.vy-=Math.sin(p.chA)*6}}},
+ cpu(p,o,I,d){if((p.chCD||0)<=frame&&d>200&&d<700&&rng()<.03)I.b.next=true},
+ draw(q,R){ctx.fillStyle='#1a1a24';ctx.strokeStyle='#ffd23a';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(q.x-R*1.3,q.y-R*.7);ctx.lineTo(q.x+R*1.3,q.y-R*.7);ctx.lineTo(q.x+R*.2,q.y-R*2.3);ctx.closePath();ctx.fill();ctx.stroke();
+  const a=frame*.08;starPath(q.x+Math.cos(a)*R*1.8,q.y+Math.sin(a)*R*1.8,5,a);ctx.fillStyle='#ffe37a';ctx.fill();
+  if(q.chT>frame){const u=1-(q.chT-frame)/50;ctx.globalAlpha=.3+u*.6;ctx.fillStyle='#fff59a';ctx.beginPath();ctx.arc(q.x+Math.cos(q.aim)*24,q.y+Math.sin(q.aim)*24,4+u*18,0,TAU);ctx.fill();ctx.globalAlpha=.15+u*.3;ctx.strokeStyle='#fff59a';ctx.lineWidth=2+u*10;ctx.beginPath();ctx.moveTo(q.x,q.y);ctx.lineTo(q.x+Math.cos(q.chA)*1000,q.y+Math.sin(q.chA)*1000);ctx.stroke();ctx.globalAlpha=1}}},
+
+// ---------------------------------------------------------------- FLANDRE : deux modes (Destruction / Cage), cristaux des ailes
+{k:'flandre',name:'Flandre',col:'#ff3030',spd:1,din:1,dout:1,role:'Berserker · Two modes + wing crystals',
+ d:'NEXT toggles RUIN (melee x1.3 reach and damage, short clock spread, takes +15%) and CAGE (slow lattice bullets that linger, takes -15%). Heavy toward a foe spends a wing crystal: STARBOW. Crystals come back on melee hits.',
+ cd:8,shot(p,a,f,pm,lv){const D=pm*(1+.2*(lv-1));if(p.chM){const n=f?6:8;for(let i=0;i<n;i++){const b=chB(p,a+(i/(n-1)-.5)*(f?.5:1.2),3.2,D*2.6/n*1.95,5,150);if(b){b.c='#ff9a9a';b.cage=1}}}else{const n=f?3:5;for(let i=0;i<n;i++){const b=chB(p,a+(i/(n-1)-.5)*(f?.18:.6),11,D*1.9/n*2.2,4,46);if(b)b.c='#ffd23a'}}},
+ heavy:{N:(p,m,a,k)=>{for(const o of[-.3,0,.3])spawnH(p,m,a+o,k,{k:.45,r:9})},F:(p,m,a,k)=>{if((p.chC|0)>0){p.chC--;sfx('strong_effect_attack',.5);for(let i=0;i<9;i++)spawnH(p,m,a+(i-4)*.12,k,{spd:8+i%3,r:8,k:.3});txt(p.x,p.y-40,'STARBOW!','#ff9aff',16)}else spawnH(p,m,a,k,{spd:11})},B:(p,m,a,k)=>{for(let i=0;i<4;i++)spawnH(p,m,a+i*TAU/4+frame*.1,k,{spd:3.2,r:11,k:.35,life:260})}},
+ melee:{},
+ spell:{name:'Taboo「Kagome, Kagome」',loop:120,fn(p,o,k){if(k%12===0){for(let i=0;i<16;i++)addB(p,i*TAU/16+k*.02,2.2,0,null,300);for(let i=0;i<16;i++)addB(p,i*TAU/16-k*.02+Math.PI/16,2.2,0,null,300)}if(k%40===0&&o)for(let i=-2;i<=2;i++)addB(p,Math.atan2(o.y-p.y,o.x-p.x)+i*.15,6,1,MOVES.heavyF,200)}},
+ special(p){if(!chCool(p,90))return;p.chM=p.chM?0:1;sfx(p.chM?'blockshield':'fire',.6);txt(p.x,p.y-40,p.chM?'CAGE MODE':'RUIN MODE',p.chM?'#ff9a9a':'#ffd23a',16);RINGS.push({x:p.x,y:p.y,r:0,m:60,t:16,c:p.chM?'#ff9a9a':'#ffd23a'})},
+ init(p){p.chC=4;p.chM=0},tick(p){if(frame%360===0&&(p.chC|0)<4)p.chC++},
+ onMelee(p){if((p.chC|0)<4&&rng()<.5)p.chC++},
+ mel:p=>p.chM?null:{range:1.3,dmg:1.3},dinM:p=>p.chM?.85:1,spdM:p=>p.chM?.9:1,
+ cpu(p,o,I,d){if((p.chCD||0)<=frame&&((d<220&&p.chM)||(d>420&&!p.chM)))I.b.next=true},
+ draw(q,R){const cs=['#ff4a4a','#ffa33a','#ffe83a','#5cff7a','#4ab3ff','#7a5cff','#ff5cf0'];for(const s of[-1,1]){ctx.strokeStyle='#3a1a24';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(q.x+s*R*.6,q.y-R*.3);ctx.quadraticCurveTo(q.x+s*R*1.6,q.y-R*1.6,q.x+s*R*2.4,q.y-R*.6);ctx.stroke();
+  for(let i=0;i<4;i++){const u=(i+1)/4.5,x=q.x+s*R*(.8+u*1.6),y=q.y-R*(.5+Math.sin(u*Math.PI)*.9)+R*.45,on=i<(q.chC|0);ctx.fillStyle=on?cs[(i*2+(s>0?1:0))%7]:'#333';ctx.beginPath();ctx.moveTo(x,y-5);ctx.lineTo(x+3,y+2);ctx.lineTo(x,y+8);ctx.lineTo(x-3,y+2);ctx.fill()}}
+  if(!q.chM){const a=q.aim+Math.sin(frame*.15)*.3;ctx.strokeStyle='#ff9a2a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(q.x+Math.cos(a)*R,q.y+Math.sin(a)*R);ctx.lineTo(q.x+Math.cos(a)*R*2.3,q.y+Math.sin(a)*R*2.3);ctx.stroke()}else{ctx.strokeStyle='rgba(255,154,154,.5)';ctx.lineWidth=1.5;for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(q.x,q.y,R*1.5,i*Math.PI/2+frame*.02,i*Math.PI/2+frame*.02+.9);ctx.stroke()}}}},
+
+// ---------------------------------------------------------------- HECATIA : trois mondes, trois portées
+{k:'hecatia',name:'Hecatia',col:'#c070ff',spd:.98,din:1,dout:1,role:'Stance master · Earth / Moon / Otherworld',
+ d:'NEXT cycles three bodies. EARTH: shotgun, brutal up close. MOON: piercing lasers for mid range. OTHERWORLD: slow homing orbs for long range. Every switch fires a small ring: switching well is her combo.',
+ cd:8,shot(p,a,f,pm,lv){const w=p.chM|0,D=pm*(1+.2*(lv-1));
+  if(w===0){const n=f?5:7;for(let i=0;i<n;i++){const b=chB(p,a+(i/(n-1)-.5)*(f?.35:.8)+(rng()-.5)*.06,10+rng()*2,D*2.8/n,4,30+rng()*8|0);if(b)b.c='#7ad0ff'}}
+  else if(w===1){const b=chB(p,a,15,D*1.45,3,75);if(b){b.c='#ffe88a';b.lp=1}if(!f){const c=chB(p,a+.12,15,D*.55,3,60);if(c)c.c='#ffe88a';const e=chB(p,a-.12,15,D*.55,3,60);if(e)e.c='#ffe88a'}}
+  else{const n=f?1:2;for(let i=0;i<n;i++){const b=chB(p,a+(n>1?(i-.5)*.5:0),4.2,D*2.4/n,7,170);if(b){b.home=.03;b.c='#ff6a8a'}}}},
+ heavy:{N:(p,m,a,k)=>{const w=p.chM|0;spawnH(p,m,a,k,w===0?{spd:6,r:16,k:1.15,life:70}:w===1?{spd:12,r:8}:{spd:4,r:14,home:.04,life:300})},F:(p,m,a,k)=>{const w=p.chM|0;for(const o of[-.15,.15])spawnH(p,m,a+o,k,{spd:w===0?8:w===1?14:6,k:.55,home:w===2?.05:0})},B:(p,m,a,k)=>{for(let i=0;i<3;i++)spawnH(p,m,a+i*TAU/3,k,{spd:3,r:12,k:.35,life:260})}},
+ melee:{strong:{start:9,act:6,rec:26,range:54,arc:2,dmg:13,kb:18,stun:40,charge:40}},
+ spell:{name:'Three Worlds「Planetary Alignment」',loop:120,fn(p,o,k){const w=(k/40|0)%3;if(k%5===0)addB(p,k*.13+w*2.1,w===0?3:w===1?5:2.4,0,null,250);if(k%40===0&&o)for(let i=0;i<3;i++){const b0=B.length;addB(p,Math.atan2(o.y-p.y,o.x-p.x)+(i-1)*.4,4,1,MOVES.heavyN,260);if(B[b0])B[b0].home=w===2?.05:0}}},
+ special(p){if(!chCool(p,100))return;p.chM=((p.chM|0)+1)%3;const C=['#7ad0ff','#ffe88a','#ff6a8a'][p.chM];txt(p.x,p.y-40,['EARTH','MOON','OTHERWORLD'][p.chM],C,16);sfx('mirror',.6);for(let i=0;i<8;i++){const b=chB(p,i*TAU/8,4,4,5,60);if(b)b.c=C}},
+ init(p){p.chM=0},spdM:p=>p.chM===0?1.03:p.chM===2?.95:1,
+ cpu(p,o,I,d){const want=d<200?0:d<480?1:2;if((p.chM|0)!==want&&(p.chCD||0)<=frame)I.b.next=true},
+ draw(q,R){const C=['#4ab3ff','#ffe88a','#ff4a6a'];for(let i=0;i<3;i++){const a=frame*.03+i*TAU/3,on=i===(q.chM|0),r=on?7:4.5,x=q.x+Math.cos(a)*R*(on?1.6:1.9),y=q.y+Math.sin(a)*R*(on?1.6:1.9);ctx.fillStyle=C[i];ctx.globalAlpha=on?1:.6;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();if(on){ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke()}}ctx.globalAlpha=1}},
+
+// ---------------------------------------------------------------- NUE : nuages en restant immobile, OVNI pièges
+{k:'nue',name:'Nue',col:'#4a4aff',spd:1,din:.92,dout:1,role:'Trapper · Clouds + UFO turrets',
+ d:'Standing still or moving slowly (focus) gathers dark clouds (up to 5): each cloud makes your shots snake and hit 12% harder. NEXT drops a UFO turret (max 3) that fires at the nearest foe and eats light bullets. Weak while moving, terrifying when settled.',
+ cd:7,shot(p,a,f,pm,lv){const s=p.chS|0,D=pm*(1+.2*(lv-1))*(1+.12*s),n=f?2:3;for(let i=0;i<n;i++){const b=chB(p,a+(i-(n-1)/2)*(f?.08:.28),8,D*3.6/n,4+s*.4,100);if(b){b.c=s?'#9a6aff':'#6a8aff';b.wav=s?(i%2?1:-1)*(.06+s*.015):0;b.ph=frame*.3}}},
+ heavy:{N:(p,m,a,k)=>spawnH(p,m,a,k,{spd:5,r:13,k:1}),F:(p,m,a,k)=>{for(let i=0;i<3;i++)spawnH(p,m,a+(rng()-.5)*.5,k,{spd:8+rng()*4,r:8,k:.4})},B:(p,m,a,k)=>{for(let i=0;i<5;i++)spawnH(p,m,a+Math.PI+(i-2)*.4,k,{spd:2.5,r:10,k:.3,life:280})}},
+ melee:{},
+ spell:{name:'Unknown「Undefined Darkness」',loop:100,fn(p,o,k){if(k%8===0)for(let i=0;i<5;i++){const b0=B.length;addB(p,i*TAU/5+k*.04,3,0,null,260);const b=B[b0];if(b){b.wav=.08;b.ph=i}}if(k%50===0&&o){const b0=B.length;addB(p,Math.atan2(o.y-p.y,o.x-p.x),3.5,1,MOVES.heavyB,320);if(B[b0])B[b0].home=.03}}},
+ special(p){const L=ENT.filter(e=>e.k==='nufo'&&e.o===p.id);if(!chCool(p,240))return txt(p.x,p.y-40,'UFO '+Math.ceil((p.chCD-frame)/60)+'s','#888',13);if(L.length>=3)L[0].t=0;ENT.push({k:'nufo',o:p.id,t:720,x:p.x,y:p.y-30,cd:40,hp:9});sfx('weird',.6)},
+ tick(p){const v=Math.hypot(p.vx,p.vy);if(v<2.1&&p.state!=='dash'){p.chW=(p.chW|0)+1;if(p.chW%20===0&&(p.chS|0)<5){p.chS=(p.chS|0)+1;sfx('ghost',.3)}}else{p.chW=0;if(v>3&&frame%20===0&&(p.chS|0)>0)p.chS--}},
+ cpu(p,o,I,d){if((p.chCD||0)<=frame&&d>200&&rng()<.04)I.b.next=true;if(d>380&&rng()<.4){I.x*=.1;I.y*=.1}},
+ draw(q,R){for(const s of[-1,1])for(let i=0;i<3;i++){const a=(s>0?0:Math.PI)+(i-1)*.5+Math.sin(frame*.1+i)*.12,x0=q.x+Math.cos(a)*R,y0=q.y+Math.sin(a)*R;ctx.strokeStyle=s>0?'#4ab3ff':'#ff3a4a';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(x0,y0);
+   if(s>0){for(let j=1;j<=4;j++)ctx.lineTo(x0+Math.cos(a)*j*5+Math.cos(a+1.57)*((j%2)*2-1)*4,y0+Math.sin(a)*j*5+Math.sin(a+1.57)*((j%2)*2-1)*4)}else{ctx.lineTo(x0+Math.cos(a)*18,y0+Math.sin(a)*18);ctx.lineTo(x0+Math.cos(a+.3)*13,y0+Math.sin(a+.3)*13)}ctx.stroke()}
+  const s=q.chS|0;for(let i=0;i<s;i++){const a=frame*.02+i*TAU/5;ctx.fillStyle='rgba(40,20,70,.75)';ctx.beginPath();ctx.arc(q.x+Math.cos(a)*R*2.2,q.y+Math.sin(a)*R*1.6,7,0,TAU);ctx.fill()}}},
+
+// ---------------------------------------------------------------- OKINA : quatre saisons, libération de saison
+{k:'okina',name:'Okina',col:'#ffd23a',spd:.96,din:.92,dout:1,role:'Controller · Four seasons + release',
+ d:'NEXT changes season: SPRING hits heal you, SUMMER burns harder, AUTUMN pushes foes away, WINTER slows them. Damage fills the season gauge; PREV releases it: a huge effect of the current season.',
+ cd:8,shot(p,a,f,pm,lv){const s=p.chM|0,C=['#ffb0d6','#ff7a3a','#ffb04a','#bfe8ff'][s],D=pm*(1+.2*(lv-1))*(s===1?1.15:1),n=f?3:4;for(let i=0;i<n;i++){const b=chB(p,a+(i-(n-1)/2)*(f?.1:.3),f?11:8,D*1.85/n*1.5,5,95);if(b){b.c=C;b.sea=s+1}}},
+ heavy:{N:(p,m,a,k)=>{for(const o of[-.25,0,.25])spawnH(p,m,a+o,k,{k:.42,r:10})},F:(p,m,a,k)=>spawnH(p,m,a,k,{spd:12,r:9}),B:(p,m,a,k)=>{for(let i=0;i<4;i++)spawnH(p,m,a+Math.PI+(i-1.5)*.5,k,{spd:3,r:11,k:.32,life:260})}},
+ melee:{},
+ spell:{name:'Secret Art「Halo of Seasons」',loop:120,fn(p,o,k){const s=(k/30|0)%4;if(k%6===0)for(let i=0;i<4;i++){const b0=B.length;addB(p,i*TAU/4+k*.05+s,2.8+s*.4,0,null,260);if(B[b0])B[b0].c=['#ffb0d6','#ff7a3a','#ffb04a','#bfe8ff'][s]}}},
+ special(p){if(!chCool(p,45))return;p.chM=((p.chM|0)+1)%4;txt(p.x,p.y-40,['SPRING','SUMMER','AUTUMN','WINTER'][p.chM],['#ffb0d6','#ff7a3a','#ffb04a','#bfe8ff'][p.chM],16);sfx('se_select00',.6)},
+ special2(p){if((p.chG|0)<100)return txt(p.x,p.y-40,'SEASON '+(p.chG|0)+'%','#888',13);p.chG=0;const s=p.chM|0;flash(.3,['#ffb0d6','#ff7a3a','#ffb04a','#bfe8ff'][s]);sfx('se_enep01',.7);big(['SPRING RELEASE','SUMMER RELEASE','AUTUMN RELEASE','WINTER RELEASE'][s],['#ffb0d6','#ff7a3a','#ffb04a','#bfe8ff'][s],40);
+  if(s===0)p.hp=Math.min(T.HP,p.hp+22);else if(s===1){for(let i=0;i<24;i++)xBall(p,p.x,p.y,i*TAU/24,5,9,{dmg:6,kb:8,stun:24,arm:0},{c:'#ff7a3a',life:120})}
+  else for(const q of P){if(q===p||q.state==='dead'||!foeOf(p.id,q))continue;const dx=q.x-p.x,dy=q.y-p.y,dd=Math.hypot(dx,dy)||1;if(dd<380){if(s===2){q.vx+=dx/dd*18;q.vy+=dy/dd*18;hit(q,p,dx,dy,{dmg:5,kb:6,stun:30},1,true)}else{q.slowT=frame+150;txt(q.x,q.y-40,'FROZEN TIME','#bfe8ff',16)}}}
+  if(s===3)for(const b of B)if(b.owner!==p.id&&Math.hypot(b.x-p.x,b.y-p.y)<380){b.vx*=.2;b.vy*=.2}},
+ init(p){p.chM=0;p.chG=0},
+ cpu(p,o,I,d){if((p.chG|0)>=100&&d<350)I.b.prev=true;else if((p.chCD||0)<=frame&&rng()<.01)I.b.next=true},
+ draw(q,R){const s=q.chM|0,C=['#ffb0d6','#ff7a3a','#ffb04a','#bfe8ff'][s];ctx.fillStyle='#2a2a10';ctx.beginPath();ctx.ellipse(q.x,q.y-R*1.05,R*1.25,R*.35,0,0,TAU);ctx.fill();ctx.fillStyle='#ffd23a';ctx.fillRect(q.x-R*.5,q.y-R*1.7,R,R*.65);
+  ctx.strokeStyle=C;ctx.lineWidth=3;ctx.beginPath();ctx.arc(q.x,q.y,R*1.6,-Math.PI/2,-Math.PI/2+TAU*(q.chG|0)/100);ctx.stroke();ctx.globalAlpha=.35;ctx.lineWidth=1;ctx.beginPath();ctx.arc(q.x,q.y,R*1.6,0,TAU);ctx.stroke();ctx.globalAlpha=1}},
+
+// ---------------------------------------------------------------- NAZRIN : flèches de sourcier, souris qui chassent la cible touchée, pendule
+{k:'nazrin',name:'Nazrin',col:'#a0a0b0',spd:1.02,din:1,dout:1,role:'Zoner · Dowsing mice + Pendulum',
+ d:'Arrows fly straight; mice only home in on a foe your arrows hit in the last 2 s, so landing hits snowballs. NEXT: PENDULUM GUARD, a spinning pendulum that shreds small bullets (2.5 s). Passive: item cards drift toward her.',
+ cd:6,shot(p,a,f,pm,lv){const D=pm*(1+.2*(lv-1));const b=chB(p,a,12,D*(f?1.05:.7),3,85);if(b){b.c='#d0d0e0';b.dows=1}if(!f||lv>=3){const n=lv>=3?2:1;for(let i=0;i<n;i++){const m=chB(p,a+(i?.5:-.5),5.5,D*.9/n,4,140);if(m){m.c='#b08a6a';m.mouse=1}}}},
+ heavy:{N:(p,m,a,k)=>spawnH(p,m,a,k,{spd:7,r:12}),F:(p,m,a,k)=>{for(const o of[-10,10])spawnH(p,m,a,k,{off:o,spd:13,r:6,k:.55})},B:(p,m,a,k)=>{for(let i=0;i<6;i++)spawnH(p,m,a+Math.PI+(i-2.5)*.35,k,{spd:3,r:9,k:.28,life:260})}},
+ melee:{jab:{start:4,act:5,rec:10,range:40,arc:1.4,dmg:5,kb:6,stun:20}},
+ spell:{name:'Dowsing「Nazrin Pendulum」',loop:90,fn(p,o,k){if(k%3===0){const a=k*.21;addB(p,a,4,0,null,200);addB(p,a+Math.PI,4,0,null,200)}if(k%45===0&&o){const b0=B.length;addB(p,Math.atan2(o.y-p.y,o.x-p.x),5,1,MOVES.heavyN,240);if(B[b0])B[b0].home=.05}}},
+ special(p){if(!chCool(p,420))return txt(p.x,p.y-40,'PENDULUM '+Math.ceil((p.chCD-frame)/60)+'s','#888',13);p.chT=frame+150;sfx('roll2',.6)},
+ tick(p){if(p.chT>frame){const a=frame*.25;for(let i=0;i<2;i++){const px=p.x+Math.cos(a+i*Math.PI)*48,py=p.y+Math.sin(a+i*Math.PI)*48;for(const b of B)if(!b.dead&&!b.heavy&&b.owner!==p.id&&Math.hypot(b.x-px,b.y-py)<18)b.dead=1;for(const q of P)if(q!==p&&q.state!=='dead'&&foeOf(p.id,q)&&q.inv<=0&&(q.pdCD||0)<frame&&Math.hypot(q.x-px,q.y-py)<bodyR(q)+10){q.pdCD=frame+30;hit(q,p,q.x-p.x,q.y-p.y,{dmg:4,kb:7,stun:18},1,false)}}}
+  for(const c of CARDS)if(c&&c.x!==undefined){const dx=p.x-c.x,dy=p.y-c.y,d=Math.hypot(dx,dy);if(d>60&&d<900){c.x+=dx/d*.35;c.y+=dy/d*.35}}},
+ cpu(p,o,I,d){if((p.chCD||0)<=frame&&B.filter(b=>!b.dead&&!b.heavy&&b.owner!==p.id&&Math.hypot(b.x-p.x,b.y-p.y)<120).length>=5)I.b.next=true},
+ draw(q,R){ctx.fillStyle='#8a8a9a';for(const s of[-1,1]){ctx.beginPath();ctx.arc(q.x+s*R*.85,q.y-R*.95,R*.5,0,TAU);ctx.fill()}ctx.fillStyle='#ffb0c0';for(const s of[-1,1]){ctx.beginPath();ctx.arc(q.x+s*R*.85,q.y-R*.95,R*.25,0,TAU);ctx.fill()}
+  const sw=Math.sin(frame*.12)*.8,px=q.x+Math.sin(sw)*R*1.9,py=q.y+Math.cos(sw)*R*1.9;ctx.strokeStyle='#ccc';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(q.x,q.y);ctx.lineTo(px,py);ctx.stroke();ctx.fillStyle='#ff4a6a';ctx.beginPath();ctx.moveTo(px,py-5);ctx.lineTo(px+4,py+3);ctx.lineTo(px-4,py+3);ctx.fill();
+  if(q.chT>frame){const a=frame*.25;ctx.fillStyle='#ff4a6a';for(let i=0;i<2;i++){const x=q.x+Math.cos(a+i*Math.PI)*48,y=q.y+Math.sin(a+i*Math.PI)*48;ctx.beginPath();ctx.moveTo(x,y-11);ctx.lineTo(x+8,y+6);ctx.lineTo(x-8,y+6);ctx.fill()}}}},
+
+// ---------------------------------------------------------------- AYA : vitesse, jauge de vent, rafale et photo
+{k:'aya',name:'Aya',col:'#e04a4a',spd:1.16,din:1.05,dout:1.05,role:'Speedster · Wind gauge, Gust + Camera',
+ d:'The fastest fighter. Moving fast fills the WIND gauge. NEXT: GUST (50%), a rushing wind that carries her forward, blows foes away and wipes small bullets on her path. PREV: SCOOP (100%), a camera flash that stuns every foe in front of her after a short delay.',
+ cd:5,shot(p,a,f,pm,lv){const D=pm*(1+.2*(lv-1)),n=f?2:3;for(let i=0;i<n;i++){const b=chB(p,a+(i-(n-1)/2)*(f?.06:.2),14,D*1.75/n,3,60);if(b)b.c='#d0f0ff'}},
+ heavy:{N:(p,m,a,k)=>{for(const o of[-.4,0,.4])spawnH(p,m,a+o,k,{spd:9,r:8,k:.4})},F:(p,m,a,k)=>spawnH(p,m,a,k,{spd:15,r:7}),B:(p,m,a,k)=>{for(let i=0;i<3;i++)spawnH(p,m,a+Math.PI+(i-1)*.5,k,{spd:5,r:9,k:.35})}},
+ melee:{dashatk:{start:2,act:7,rec:14,range:44,arc:1.5,dmg:8,kb:11,stun:24,keep:.97}},
+ spell:{name:'Wind Sign「Tengu Typhoon」',loop:80,fn(p,o,k){if(k%3===0)for(let i=0;i<2;i++)addB(p,k*.31+i*Math.PI,6,0,null,160);if(k%40===10&&o)for(let i=-1;i<=1;i++)addB(p,Math.atan2(o.y-p.y,o.x-p.x)+i*.2,10,1,MOVES.heavyF,140)}},
+ special(p){if((p.chG|0)<50)return txt(p.x,p.y-40,'WIND '+(p.chG|0)+'%','#888',13);if(!chCool(p,40))return;p.chG-=50;p.chT=frame+16;p.chA=p.aim;sfx('windblow',.7);p.inv=Math.max(p.inv,6)},
+ special2(p){if((p.chG|0)<100)return txt(p.x,p.y-40,'WIND '+(p.chG|0)+'%','#888',13);if(!chCool(p,60))return;p.chG=0;p.chF=frame+24;p.chA2=p.aim;sfx('aimreal',1.6)},
+ tick(p){const v=Math.hypot(p.vx,p.vy);if(v>4.5&&(p.chG|0)<100)p.chG=Math.min(100,(p.chG||0)+.45);
+  if(p.chT>frame){const c=Math.cos(p.chA),s=Math.sin(p.chA);p.vx=c*15;p.vy=s*15;for(const b of B)if(!b.dead&&!b.heavy&&b.owner!==p.id&&Math.hypot(b.x-p.x,b.y-p.y)<46)b.dead=1;for(const q of P)if(q!==p&&q.state!=='dead'&&foeOf(p.id,q)&&q.inv<=0&&(q.gsCD||0)<frame&&Math.hypot(q.x-p.x,q.y-p.y)<bodyR(q)+30){q.gsCD=frame+40;hit(q,p,c,s,{dmg:6,kb:16,stun:26},1,true)}if(frame%2)FX.push({x:p.x,y:p.y,vx:-c*2,vy:-s*2,t:16,c:'#d0f0ff'})}
+  if(p.chF&&frame===p.chF){p.chF=0;const a=p.chA2;flash(.35,'#fff');sfx('photo',.8);for(const q of P){if(q===p||q.state==='dead'||!foeOf(p.id,q))continue;const dx=q.x-p.x,dy=q.y-p.y,dd=Math.hypot(dx,dy),da=Math.abs(((Math.atan2(dy,dx)-a)%TAU+TAU*1.5)%TAU-Math.PI);if(dd<520&&da<.55&&q.inv<=0){if(parryOn(q)){parryFx(q);continue}Object.assign(q,{state:'hitstun',t:50,vx:0,vy:0,charging:false});txt(q.x,q.y-40,'SCOOP!','#fff',18)}}for(const b of B)if(b.owner!==p.id&&!b.heavy){const dx=b.x-p.x,dy=b.y-p.y,da=Math.abs(((Math.atan2(dy,dx)-a)%TAU+TAU*1.5)%TAU-Math.PI);if(Math.hypot(dx,dy)<520&&da<.55)b.dead=1}}},
+ init(p){p.chG=30},
+ cpu(p,o,I,d){if((p.chG|0)>=100&&d<480&&rng()<.05)I.b.prev=true;else if((p.chG|0)>=60&&d>260&&rng()<.03)I.b.next=true},
+ draw(q,R){ctx.fillStyle='#e04a4a';ctx.beginPath();for(let i=0;i<6;i++){const a=i*TAU/6;ctx.lineTo(q.x+Math.cos(a)*R*.42,q.y-R*1.15+Math.sin(a)*R*.42)}ctx.fill();
+  const a=q.aim+1.9;ctx.fillStyle='#2a8a4a';ctx.beginPath();ctx.moveTo(q.x+Math.cos(a)*R,q.y+Math.sin(a)*R);for(let i=-2;i<=2;i++)ctx.lineTo(q.x+Math.cos(a+i*.18)*R*2.1,q.y+Math.sin(a+i*.18)*R*2.1);ctx.fill();
+  const g=(q.chG|0)/100;ctx.strokeStyle='#d0f0ff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(q.x,q.y,R*1.55,Math.PI*.75,Math.PI*.75+Math.PI*1.5*g);ctx.stroke();
+  if(q.chF&&q.chF>frame){ctx.globalAlpha=.25;ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(q.x,q.y);ctx.arc(q.x,q.y,520,q.chA2-.55,q.chA2+.55);ctx.fill();ctx.globalAlpha=1}}}
+];
+// enregistrement dans les tables du moteur (SHOTS / HEAVY / MELEE / SPELLS)
+CHR.forEach((c,i)=>{SHOTS.push({name:c.name,cd:c.cd,f:c.shot});HEAVY.push(c.heavy);MELEE.push(c.melee||{});c.spI=SPELLS.length;SPELLS.push(c.spell)});
+const CHL=CHR.map((c,i)=>CH0+i);
+// attribution au départ : choix du joueur (écran de sélection) sinon perso par défaut ; spell du perso
+{const S0=start;start=(...a)=>{const r=S0(...a);if(mode==='game'&&!(typeof TUT!=='undefined'&&TUT)){P.forEach((p,i)=>{if(p.shotT<CH0)p.shotT=p.cpu?CHL[(seed+i*3)%CHL.length]:CHL[i%CHL.length];const c=chOf(p);if(c){p.spI=c.spI;c.init&&c.init(p)}})}return r}}
+// Next / Prev : mécanique du perso (pendant les 2 premières secondes : changer de perso, utile en ligne)
+{const U0=updP;updP=(p,o,I)=>{const c=chOf(p);if(c&&I&&I.b&&p.state!=='dead'){const nx=!!I.b.next,pv=!!I.b.prev,en=nx&&!p.chPN,ep=pv&&!p.chPP;p.chPN=nx;p.chPP=pv;
+  if(en||ep){if(frame<120&&p.state==='idle'){const j=CHL.indexOf(p.shotT),k=CHL[(j+(en?1:CHL.length-1))%CHL.length];p.shotT=k;const c2=chOf(p);p.spI=c2.spI;c2.init&&c2.init(p);txt(p.x,p.y-34,c2.name,LCOLS[p.id],14);sfx('move',.7)}
+   else if(p.state!=='spell'){if(ep&&c.special2)c.special2(p);else c.special(p)}}
+  I={x:I.x,y:I.y,b:{...I.b,next:false,prev:false}}}return U0(p,o,I)}}
+// tick de chaque perso (seulement quand la partie avance vraiment)
+{const S0=step;step=()=>{const w0=WT;S0();if(mode!=='game'||WT===w0)return;for(const p of P){const c=chOf(p);if(c&&c.tick&&p.state!=='dead')c.tick(p)}
+ for(const e of ENT)if(e.k==='nufo'){const o=P[e.o];if(!o||o.state==='dead'){e.t=0;continue}e.y+=Math.sin(frame*.05+e.x)*.4;for(const b of B)if(!b.dead&&!b.heavy&&b.owner!==e.o&&Math.hypot(b.x-e.x,b.y-e.y)<22){b.dead=1;if(--e.hp<=0){e.t=0;burst(e.x,e.y,'#9a6aff',14);sfx('break',.5)}}
+  if(--e.cd<=0){const q=nearFoe(e.o,e.x,e.y,700);e.cd=Math.max(20,40-(o.chS|0)*4);if(q){const a=Math.atan2(q.y-e.y,q.x-e.x);for(const da of[-.18,0,.18])xBall(o,e.x,e.y,a+da,4.2,7,{dmg:3.5,kb:5,stun:16,arm:0},{c:'#9a6aff',life:200});sfx('shoot3',.25)}}}
+ for(const b of B)if(b.wav&&!b.dead){const s=Math.hypot(b.vx,b.vy),a=Math.atan2(b.vy,b.vx)+Math.sin(frame*.25+(b.ph||0))*b.wav;b.vx=Math.cos(a)*s;b.vy=Math.sin(a)*s}
+ for(const b of B)if(b.mouse&&!b.dead){const o=P[b.owner],q=o&&o.chTg!==undefined&&o.chTgF>frame?P[o.chTg]:null;b.home=q&&q.state!=='dead'?.07:0}}}
+// effets des balles des persos : saisons d'Okina, cible de sourcier de Nazrin, cage de Flandre
+{const C0=chBullet;chBullet=(b,t)=>{const o=P[b.owner];if(o&&b.lp&&!b.heavy){const H=b.hitT||(b.hitT={});if(H[t.id])return 1;H[t.id]=1;t.hp-=chDmg(t,o,b.dmg,false);t.flash=3;sfxDmg(t);if(t.hp<=0)ko(t,'K.O.');return 1}if(o&&b.sea){const s=b.sea-1;if(s===0)o.hp=Math.min(T.HP,o.hp+.35);else if(s===2){const l=Math.hypot(b.vx,b.vy)||1;t.vx+=b.vx/l*1.6;t.vy+=b.vy/l*1.6}else if(s===3)t.slowT=Math.max(t.slowT||0,frame+45);o.chG=Math.min(100,(o.chG||0)+2.2)}
+ if(o&&b.dows){o.chTg=t.id;o.chTgF=frame+120}return C0(b,t)}}
+{const H0=hit;hit=(v,a,dx,dy,m,mult,heavy)=>{const hp=v.hp;const r=H0(v,a,dx,dy,m,mult,heavy);if(a&&a!==v&&v.hp<hp){const c=chOf(a);if(c&&a.shotT===CH0+5)a.chG=Math.min(100,(a.chG||0)+(hp-v.hp)*.8);if(c&&c.onMelee&&!heavy)c.onMelee(a)}return r}}
+// stats : vitesse, dégâts infligés / subis, mêlée modifiée par le mode
+{const S0=chSpeed;chSpeed=p=>{let k=S0(p);const c=chOf(p);if(c){k*=c.spd*(c.spdM?c.spdM(p):1);if(c.k==='marisa'&&p.chT>frame)k*=.4}return k}}
+{const D0=chDmg;chDmg=(v,a,d,heavy)=>{const cv=chOf(v),ca=a&&a!==v?chOf(a):null;if(ca)d*=ca.dout;if(cv)d*=cv.din*(cv.dinM?cv.dinM(v):1);return D0(v,a,d,heavy)}}
+{const A0=startAtk;startAtk=(p,n)=>{const r=A0(p,n);const c=chOf(p),M=c&&c.mel&&c.mel(p);if(M&&p.mv&&p.state==='atk'&&p.mv.range)p.mv={...p.mv,range:p.mv.range*M.range,dmg:p.mv.dmg*M.dmg};return r}}
+// tir bloqué pendant la barrière de Reimu
+{const F0=fireLight;fireLight=p=>{const c=chOf(p);if(c&&c.blockShot&&c.blockShot(p))return;return F0(p)}}
+// IA : plus de changement de type de tir ; utilise la mécanique de son perso
+{const C0=cpuInput;cpuInput=(p,o)=>{const I=C0(p,o),c=chOf(p);if(c){I.b.next=false;I.b.prev=false;if(p.ai)p.ai.want=undefined;if(o&&frame>=120&&p.state!=='dead'&&p.state!=='spell')c.cpu&&c.cpu(p,o,I,Math.hypot(o.x-p.x,o.y-p.y))}return I}}
+// dessin : emblème de chaque perso par-dessus son corps + OVNI de Nue
+{const D0=drawP;drawP=q=>{D0(q);const c=chOf(q);if(!c||q.state==='dead'||q.state==='eaten'||CX.anon>0||q.fx.koishi>0||q.fx.under>0)return;ctx.save();if(q.inv>0&&(frame>>2)%2)ctx.globalAlpha=.45;c.draw(q,bodyR(q));ctx.restore()}}
+{const W0=drawWorldItems;drawWorldItems=function(){W0();for(const e of ENT)if(e.k==='nufo'){ctx.save();ctx.translate(e.x,e.y);ctx.fillStyle='#3a2a6a';ctx.beginPath();ctx.ellipse(0,0,16,6,0,0,TAU);ctx.fill();ctx.fillStyle='#9a6aff';ctx.beginPath();ctx.arc(0,-3,6,Math.PI,0);ctx.fill();ctx.fillStyle=(frame>>3)%2?'#ff4a6a':'#5cff7a';for(const x of[-10,0,10]){ctx.beginPath();ctx.arc(x,2,1.8,0,TAU);ctx.fill()}ctx.restore()}}}
+
 // ---- porte audio : le navigateur bloque le son tant qu'il n'y a ni clic ni touche (la manette ne compte pas) → écran clair « clique pour jouer »
 let AGT=0,AGN=0;for(const e of['pointerdown','mousedown','keydown','touchstart'])addEventListener(e,()=>{AGT=performance.now()},true);
 const aLock=()=>AC&&AC.state!=='running';
