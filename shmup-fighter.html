@@ -2898,7 +2898,7 @@ function onlReady(v){if(!ONL.rdy)ONL.rdy=new Set();if(v)ONL.rdy.add(ONL.id);else
 function onlCheckRematch(){if(ONL.id!==0||ONL.rules)return;const ids=[0].concat(ONL.cl.filter(k=>k.ok&&k.c.open).map(k=>k.id));if(ids.length>1&&ids.every(i=>ONL.rdy&&ONL.rdy.has(i))){ONL.rdy=new Set();setTimeout(()=>{if(ONL)onlStart()},400)}}
 function onlRules(){ONL.rules=1;onlBcast({t:'rules',v:1});openSub('RULES (online)',RULESM)}
 function onlMsg(m,k){if(m.t==='rdy'){if(!ONL.rdy)ONL.rdy=new Set();if(m.v)ONL.rdy.add(m.p);else ONL.rdy.delete(m.p);sfx('se_select00',.5);if(ONL.id===0)onlCheckRematch();return true}
- if(m.t==='rules'){ONL.hostRules=m.v;return true}if(m.t==='lobby'){ONL.lob=m.L;return true}if(m.t==='nick'&&k){k.nick=String(m.n||'').slice(0,12);return true}return false}
+ if(m.t==='rules'){ONL.hostRules=m.v;return true}if(m.t==='lobby'){ONL.lob=m.L;return true}if(m.t==='nick'&&k){k.nick=String(m.n||'').slice(0,12);return true}if(m.t==='ch'&&k){const c=m.c|0;k.ch=c>=CH0&&c<CH0+CHR.length?c:null;return true}return false}
 function onlResDraw(fy){const L=onlResItems();ONL.rsel=clamp(ONL.rsel||0,0,L.length-1);L.forEach((it,i)=>{const s=i===ONL.rsel,x=W/2+(i-(L.length-1)/2)*230,y=fy;ctx.fillStyle=s?'rgba(255,210,58,.18)':'rgba(255,255,255,.05)';ctx.fillRect(x-105,y-24,210,36);ctx.strokeStyle=s?'#ffd23a':'#555';ctx.lineWidth=2;ctx.strokeRect(x-105,y-24,210,36);
   ctx.fillStyle=s?'#ffd23a':'#ccc';ctx.font='bold 15px monospace';ctx.fillText(it.t,x,y);hot.push({x:x-105,y:y-24,w:210,h:36,hover:()=>{ONL.rsel=i},click:()=>{ONL.rsel=i;it.f()}})});
  ctx.font='13px monospace';ctx.fillStyle='#9fe0c0';ctx.fillText(ONL.hostRules?'The host is changing the rules...':'Everyone must press REMATCH to start again.  ←/→: choose  ·  Enter: confirm',W/2,fy+40)}
@@ -3090,7 +3090,7 @@ function onlHostConn(c){const used=new Set(ONL.cl.map(k=>k.id));let id=1;while(u
   if(m.t==='bye'){onlHostLost(k,m.why);return}
   if(m.t==='mpref'){k.mpok=-2;return}
   if((m.t==='i'||m.t==='rdy')&&m.p!==k.id)return;
-  if(m.t==='nick'){onlMsg(m,k);return}if(!onlMsg(m,k)&&NET)netRecv(m);for(const o of ONL.cl)if(o!==k&&o.c.open)try{o.c.send(m)}catch(e){}});
+  if(m.t==='nick'||m.t==='ch'){onlMsg(m,k);return}if(!onlMsg(m,k)&&NET)netRecv(m);for(const o of ONL.cl)if(o!==k&&o.c.open)try{o.c.send(m)}catch(e){}});
  c.on('close',()=>onlHostLost(k));c.on('error',e=>onlLog('Connection error: '+(e.type||e)))}
 function onlHostLost(k,why){if(!ONL||!ONL.cl.includes(k))return;ONL.cl=ONL.cl.filter(x=>x!==k);onlLog(why==='version'?'P'+(k.id+1)+' has a different game version (must be the SAME file).':'P'+(k.id+1)+' left.');
  if(NET&&mode==='game'&&NET.drop[k.id]===Infinity){const F=NET.conf[k.id]+1;netDrop(k.id,F);onlBcast({t:'drop',k:k.id,f:F})}}
@@ -3099,7 +3099,7 @@ function onlDelayN(){const r=ONL.cl.map(k=>k.rtt||100).sort((a,b)=>b-a),w=r.leng
 function onlStart(){if(!ONL||ONL.id!==0)return;const M=ALLM()[mapI];if(M&&M.walls&&!ONL.mapSent){onlSendMap(M);return}ONL.mapSent=0;const cl=ONL.cl.filter(k=>k.ok&&k.c.open);if(!cl.length){onlLog('Wait for at least one friend.');return}
  cl.sort((a,b)=>a.id-b.id);const map={0:0};cl.forEach((k,i)=>map[k.id]=i+1);for(const k of cl)k.id=map[k.id]; // numéros sans trou
  const n=cl.length+1,{D,lat}=onlDelayN(),tm=TEAMA.slice(0,n);let teams=TEAMS&&n>2&&new Set(tm).size>1;
- const names=[nickOf()].concat(cl.map(k=>k.nick||('P'+(k.id+1))));ONL.gN=(ONL.gN||0)+1;const o={v:NETV,g:ONL.gN,names,dn:Date.now(),mw:Math.round(W/SC),n,D,lat,TEAMS:teams,TEAMA:tm,mapI,itemsOn,itemOn:{...itemOn},COMP,stI,TIMER,NERV,maxC,seed:(Math.random()*1e9|0)||1};
+ const names=[nickOf()].concat(cl.map(k=>k.nick||('P'+(k.id+1))));ONL.gN=(ONL.gN||0)+1;const o={v:NETV,g:ONL.gN,names,chars:[myCh()].concat(cl.map(k=>k.ch==null?null:k.ch)),dn:Date.now(),mw:Math.round(W/SC),n,D,lat,TEAMS:teams,TEAMA:tm,mapI,itemsOn,itemOn:{...itemOn},COMP,stI,TIMER,NERV,maxC,seed:(Math.random()*1e9|0)||1};
  if(M&&M.walls)o.cm=1;for(const k of cl)try{k.c.send({t:'go',o,id:k.id})}catch(e){}onlGo({o,id:0})}
 function onlSendMap(M){const cl=ONL.cl.filter(k=>k.ok&&k.c.open);const t=JSON.stringify(mapPack(M)),CH=15000,n=Math.ceil(t.length/CH);ONL.xfer={p:0,n,t0:performance.now()};onlLog('Sending the map to everyone ('+Math.round(t.length/1024)+' KB)...');
  let h=7;for(let i=0;i<t.length;i+=7)h=(h*31+t.charCodeAt(i))|0;for(const k of cl){if(k.mh===h){k.mpok=1;continue}k.mpok=0;k.mhp=h;let i=0;const t0=performance.now(),go=()=>{if(!ONL)return;if(k.r&&k.r.open)pump();else if(performance.now()-t0<12000)setTimeout(go,200);else k.mpok=-1};const pump=()=>{if(!ONL)return;try{while(i<n&&(!k.r.dataChannel||k.r.dataChannel.bufferedAmount<1e6)){k.r.send({t:'mp',i,n,d:t.slice(i*CH,(i+1)*CH)});i++}}catch(e){}if(ONL.xfer)ONL.xfer.p=Math.max(ONL.xfer.p,i/n);if(i<n)setTimeout(pump,30)};go()}
@@ -3109,7 +3109,7 @@ function onlSendMap(M){const cl=ONL.cl.filter(k=>k.ok&&k.c.open);const t=JSON.st
 function onlJoin(){if(!ONL)return;txtInput('ROOM CODE FROM YOUR FRIEND','',5,c=>{if(c&&ONL)onlJoin2(c.toUpperCase())},{up:true,allow:/^[A-Z0-9]$/,hint:'5 letters / digits'})}
 async function onlJoin2(c){if(!ONL)return;ONL.st='join';ONL.code=c;onlLog('Connecting to '+c+'...');
  const p=await onlPeer();if(!ONL)return p&&p.destroy();if(!p){ONL.st='idle';return}ONL.peer=p;const cn=p.connect('shmupf-'+c,{reliable:false,serialization:'json'});ONL.conn=cn;
- const ping=[];cn.on('open',()=>{onlLog('Connected, waiting for the host...');try{cn.send({t:'nick',n:nickOf()})}catch(e){}});
+ const ping=[];cn.on('open',()=>{onlLog('Connected, waiting for the host...');try{cn.send({t:'nick',n:nickOf()});cn.send({t:'ch',c:myCh()})}catch(e){}});
  cn.on('data',m=>{if(!m||!m.t||!ONL)return;if(m.t==='p0'){try{cn.send({t:'q0',s:m.s})}catch(e){}return}if(m.t==='q0'){ping.push(performance.now()-m.s);if(ping.length>12)ping.shift();ONL.rtt=medR(ping);return}
   if(m.t==='full'){onlLog('Room is full (4 players max).');ONL.st='idle';return}
   if(m.t==='hello'){ONL.id=m.id;ONL.st='lobbyc';try{const r=ONL.peer.connect('shmupf-'+ONL.code,{reliable:true,serialization:'json',label:'r',metadata:{rid:m.id}});ONL.rc=r;const parts=[];r.on('data',x=>{if(!x||x.t!=='mp'||!ONL)return;parts[x.i]=x.d;ONL.xfer={p:parts.filter(Boolean).length/x.n};if(parts.filter(v=>v!==undefined).length===x.n){const t=parts.join('');parts.length=0;ONL.xfer=null;let M;try{M=mapUnpack(JSON.parse(t),true)}catch(e){errRep('map receive',e);return}
@@ -3123,14 +3123,14 @@ async function onlJoin2(c){if(!ONL)return;ONL.st='join';ONL.code=c;onlLog('Conne
  setTimeout(()=>{if(ONL&&ONL.st==='join'){onlLog('No answer: wrong code, or the host left. Try again.');ONL.st='idle'}},15000)}
 const NETV=(()=>{let h=7;try{for(const sc of document.scripts){const t=sc.text||'';h=(h*31+t.length)|0;for(let i=0;i<t.length;i+=997)h=(h*31+t.charCodeAt(i))|0}}catch(e){}return 'v'+(h>>>0).toString(36)})();
 function netBoot(o,id){Object.assign(itemOn,o.itemOn||{});({mapI,itemsOn,COMP,stI,TIMER,NERV,maxC}=o);nP=o.n||2;nH=nP;TEAMS=!!o.TEAMS;if(o.TEAMA)o.TEAMA.forEach((t,i)=>TEAMA[i]=t);if(o.cm&&id&&NETMAP)mapI=MAPS.length+CMAPS.length;const dn=Date.now,w0=W,M=ALLM()[mapI]||MAPS[0];Date.now=()=>o.dn;if(!M.w&&o.mw)W=o.mw*SC;
- try{start('game')}finally{Date.now=dn;W=w0}seed=o.seed;for(const p of P)p.cpu=false}
+ try{start('game')}finally{Date.now=dn;W=w0}seed=o.seed;for(const p of P)p.cpu=false;if(Array.isArray(o.chars))P.forEach((p,i)=>{const c=o.chars[i];if(c!=null&&c>=CH0&&c<CH0+CHR.length){p.shotT=c;const C=chOf(p);p.spI=C.spI;C.init&&C.init(p)}})}
 function onlGo(m){const o=m.o,id=m.id;if(o.v!==NETV){onlLog('Different game versions: everyone must use the SAME file.');try{ONL.conn&&ONL.conn.send({t:'bye',why:'version'})}catch(e){}ONL.st='idle';return}
  NETNAMES=o.names||null;ONL.rdy=new Set();ONL.hostRules=0;ONL.rsel=0;netBoot(o,id);const send=id===0?(x=>onlBcast(x)):(x=>{try{ONL.conn.open&&ONL.conn.send(x)}catch(e){}});NET=netNew(id,send,o.D,o.n);NET.g=o.g;NET.lat=o.lat;NET.rtt=id===0?Math.max(...ONL.cl.map(k=>k.rtt||100)):ONL.rtt;NET.lastMsg=performance.now();ONL.st='game';ONL.id=id;
  big('ONLINE: YOU ARE P'+(id+1),COLS[id],40);sfx('ok00')}
 {const N0=nav;nav=ev=>{if(mode!=='online')return N0(ev);const L=onlItems();if(ev==='up'){ONL.sel=(ONL.sel+L.length-1)%L.length;sfx('se_select00',.6)}else if(ev==='down'){ONL.sel=(ONL.sel+1)%L.length;sfx('se_select00',.6)}else if(ev==='ok'){const it=L[ONL.sel];if(it&&it.f)it.f();sfx('ok00')}else if(ev==='back'){onlClose();mode='menu'}}}
-function onlItems(){const s=ONL.st;if(s==='idle')return[{t:'HOST A MATCH',f:onlHost},{t:'JOIN WITH A CODE',f:onlJoin},{t:'YOUR NAME: '+nickOf()+'  (Enter: edit)',f:()=>txtInput('YOUR NAME (seen by everyone)',nickOf(),12,v=>{if(v){NICK=v;try{localStorage.setItem('sf_nick',v)}catch(e){}}})},{t:'FULL SCREEN: '+(document.fullscreenElement?'ON':'OFF  (Enter)'),f:goFull},{t:'BACK',f:()=>{onlClose();mode='menu'}}];
- if(s==='lobby')return[{t:ONL.cl.some(k=>k.ok)?'START THE MATCH ('+(ONL.cl.filter(k=>k.ok).length+1)+' players)':'(waiting for friends...)',f:onlStart},{t:'TEAMS: '+teamTxt(Math.min(4,ONL.cl.length+1))+'  (Enter: next)',f:()=>onlNextTeams(Math.min(4,ONL.cl.length+1))},{t:'CANCEL',f:()=>{onlClose();onlOpen()}}];
- return[{t:'CANCEL',f:()=>{onlClose();onlOpen()}}]}
+function onlItems(){const s=ONL.st;if(s==='idle')return[{t:'HOST A MATCH',f:onlHost},{t:'JOIN WITH A CODE',f:onlJoin},{t:'YOUR NAME: '+nickOf()+'  (Enter: edit)',f:()=>txtInput('YOUR NAME (seen by everyone)',nickOf(),12,v=>{if(v){NICK=v;try{localStorage.setItem('sf_nick',v)}catch(e){}}})},{t:'FULL SCREEN: '+(document.fullscreenElement?'ON':'OFF  (Enter)'),f:goFull},chRow(),{t:'BACK',f:()=>{onlClose();mode='menu'}}];
+ if(s==='lobby')return[{t:ONL.cl.some(k=>k.ok)?'START THE MATCH ('+(ONL.cl.filter(k=>k.ok).length+1)+' players)':'(waiting for friends...)',f:onlStart},{t:'TEAMS: '+teamTxt(Math.min(4,ONL.cl.length+1))+'  (Enter: next)',f:()=>onlNextTeams(Math.min(4,ONL.cl.length+1))},chRow(),{t:'CANCEL',f:()=>{onlClose();onlOpen()}}];
+ return[chRow(),{t:'CANCEL',f:()=>{onlClose();onlOpen()}}]}
 function teamParts(n){const out=[];const rec=(a,m)=>{if(a.length===n){if(m>1)out.push(a.slice());return}for(let t=0;t<=m&&t<4;t++){a.push(t);rec(a,Math.max(m,t+1));a.pop()}};rec([],0);return out}
 function onlNextTeams(n){if(n<3){TEAMS=false;return}const L=teamParts(n),cur=TEAMS?TEAMA.slice(0,n).join():'';let i=L.findIndex(p=>p.join()===cur);i=(i+1)%L.length;const p=L[i];p.forEach((t,j)=>TEAMA[j]=t);TEAMS=new Set(p).size<n;saveOpts()}
 function drawOnline(){hot=[];uiHeader('ONLINE','2 TO 4 PLAYERS');ctx.textAlign='center';
@@ -4375,6 +4375,19 @@ const CHL=CHR.map((c,i)=>CH0+i);
 {const D0=drawP;drawP=q=>{D0(q);const c=chOf(q);if(!c||q.state==='dead'||q.state==='eaten'||CX.anon>0||q.fx.koishi>0||q.fx.under>0)return;ctx.save();if(q.inv>0&&(frame>>2)%2)ctx.globalAlpha=.45;c.draw(q,bodyR(q));ctx.restore()}}
 {const W0=drawWorldItems;drawWorldItems=function(){W0();for(const e of ENT)if(e.k==='nufo'){ctx.save();ctx.translate(e.x,e.y);ctx.fillStyle='#3a2a6a';ctx.beginPath();ctx.ellipse(0,0,16,6,0,0,TAU);ctx.fill();ctx.fillStyle='#9a6aff';ctx.beginPath();ctx.arc(0,-3,6,Math.PI,0);ctx.fill();ctx.fillStyle=(frame>>3)%2?'#ff4a6a':'#5cff7a';for(const x of[-10,0,10]){ctx.beginPath();ctx.arc(x,2,1.8,0,TAU);ctx.fill()}ctx.restore()}}}
 
+
+// ---- choix du perso en ligne (envoyé à l'hôte, appliqué au départ chez tout le monde) et en training
+let MYCH=(()=>{try{return +localStorage.getItem('sf_ch')||0}catch(e){return 0}})();
+const myCh=()=>MYCH>=CH0&&MYCH<CH0+CHR.length?MYCH:CHL[0];
+function chRow(){return{t:'YOUR FIGHTER: '+CHR[myCh()-CH0].name+'  (Enter: next)',f:()=>{const j=CHL.indexOf(myCh());MYCH=CHL[(j+1)%CHL.length];try{localStorage.setItem('sf_ch',MYCH)}catch(e){}if(ONL&&ONL.conn&&ONL.conn.open)try{ONL.conn.send({t:'ch',c:MYCH})}catch(e){}}}}
+const chSet=(p,c)=>{if(!p)return;p.shotT=c;const C=chOf(p);p.spI=C.spI;C.init&&C.init(p);burst(p.x,p.y,C.col,16)};
+{const S0=start;start=(...a)=>{const r=S0(...a);if(mode==='game'&&TEST&&TEST.train){chSet(P[0],TRX.me||myCh());chSet(P[1],TRX.dum||CHL[1])}return r}}
+{const T0=drawTrain;drawTrain=()=>{T0();if(!(TEST&&TEST.train&&paused&&mode==='game'))return;const w=Math.min(W-20,900),x0=(W-w)/2,y0=Math.max(10,H*.08),y=y0+H*.84+6;
+ const B=[['YOU: ◀ '+(chOf(P[0])||{name:'?'}).name+' ▶',d=>{const j=CHL.indexOf(P[0].shotT);TRX.me=CHL[(j+d+CHL.length)%CHL.length];chSet(P[0],TRX.me)}],['DUMMY: ◀ '+(chOf(P[1])||{name:'?'}).name+' ▶',d=>{const j=CHL.indexOf(P[1].shotT);TRX.dum=CHL[(j+d+CHL.length)%CHL.length];chSet(P[1],TRX.dum)}]];
+ ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';B.forEach(([t,f],i)=>{const x=x0+i*w/2;ctx.fillStyle='#24203a';ctx.fillRect(x+4,y,w/2-8,34);ctx.strokeStyle='#c070ff';ctx.lineWidth=1.5;ctx.strokeRect(x+4,y,w/2-8,34);ctx.fillStyle='#fff';ctx.font='bold 14px monospace';ctx.fillText(t,x+w/4,y+17);
+  hot.push({x:x+4,y,w:w/4-4,h:34,hover:()=>{},click:()=>{f(-1);sfx('se_select00',.5)}});hot.push({x:x+w/4,y,w:w/4-4,h:34,hover:()=>{},click:()=>{f(1);sfx('se_select00',.5)}})});
+ ctx.font='11px monospace';ctx.fillStyle='#aab';ctx.fillText('Click the left / right half to change · keys: [ ] you · ; and quote: dummy',W/2,y+46);ctx.restore()}}
+{const K0=onKey;onKey=c=>{if(mode==='game'&&TEST&&TEST.train&&paused){const m={BracketLeft:[0,-1],BracketRight:[0,1],Semicolon:[1,-1],Quote:[1,1]}[c];if(m){const p=P[m[0]],j=CHL.indexOf(p.shotT),k=CHL[(j+m[1]+CHL.length)%CHL.length];if(m[0])TRX.dum=k;else TRX.me=k;chSet(p,k);sfx('se_select00',.5);return}}return K0(c)}}
 // ---- porte audio : le navigateur bloque le son tant qu'il n'y a ni clic ni touche (la manette ne compte pas) → écran clair « clique pour jouer »
 let AGT=0,AGN=0;for(const e of['pointerdown','mousedown','keydown','touchstart'])addEventListener(e,()=>{AGT=performance.now()},true);
 const aLock=()=>AC&&AC.state!=='running';
