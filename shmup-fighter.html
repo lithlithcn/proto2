@@ -2851,7 +2851,7 @@ function gameSum(){let h=2166136261>>>0;const m=x=>{h=Math.imul(h^(x*1000|0),167
 
 // ===== JEU EN LIGNE : rollback netcode 1v1 (entrées seulement, prédiction + retour arrière) =====
 let NET=null,RESIM=false;
-const NMAXP=8,NSUMEV=60;
+const NMAXP=10,NSUMEV=60;
 function netNew(L,send,D){const N=netNew0(L,send,D);for(let f=0;f<N.D;f++)N.inp[L].set(f,netNeutral());N.conf[L]=N.D-1;return N}
 function netNew0(L,send,D){return {L,R:1-L,f:0,D:D||2,inp:[new Map(),new Map()],pred:new Map(),conf:[-1,-1],S:new Map(),rb:Infinity,send,rf:0,rtt:100,sums:new Map(),rsum:new Map(),desync:-1,stall:0,rbN:0,rbMax:0,lastAck:-1,sentT:0,pingT:0,skip:0,lastMsg:0,ended:false}}
 function netNeutral(){return[0,0,0,0]}
@@ -2901,13 +2901,16 @@ async function onlJoin(){if(!ONL)return;let c=(prompt('Room code from your frien
  const p=await onlPeer();if(!ONL)return p&&p.destroy();if(!p){ONL.st='idle';return}ONL.peer=p;const cn=p.connect('shmupf-'+c,{reliable:false,serialization:'json'});onlConn(cn);
  setTimeout(()=>{if(ONL&&ONL.st==='join'){onlLog('No answer: wrong code, or the host left. Try again.');ONL.st='idle'}},15000)}
 function onlConn(c){ONL.conn=c;c.on('open',()=>{ONL.st='ping';ONL.ping=[];onlLog('Connected! Measuring ping...');let n=0;const iv=setInterval(()=>{if(!ONL||ONL.conn!==c){clearInterval(iv);return}c.send({t:'p0',s:performance.now()});if(++n>=8){clearInterval(iv);if(ONL.role===0)setTimeout(onlStart,400)}},150)});
- c.on('data',m=>{if(!m||!m.t)return;if(m.t==='p0')c.send({t:'q0',s:m.s});else if(m.t==='q0'){ONL.ping.push(performance.now()-m.s)}else if(m.t==='go')onlGo(m);else if(m.t==='bye'){if(NET)NET.ended=true;onlLog('Your opponent left.');if(mode!=='game'&&ONL)ONL.st='idle'}else if(NET)netRecv(m)});
+ c.on('data',m=>{if(!m||!m.t)return;if(m.t==='p0')c.send({t:'q0',s:m.s});else if(m.t==='q0'){ONL.ping.push(performance.now()-m.s)}else if(m.t==='go')onlGo(m);else if(m.t==='bye'){if(NET)NET.ended=true;onlLog(m.why==='version'?'Different game versions: both players must use the SAME file.':'Your opponent left.');if(mode!=='game'&&ONL)ONL.st='idle'}else if(NET)netRecv(m)});
  c.on('close',()=>{if(NET)NET.ended=true;onlLog('Connection closed.');if(ONL&&mode!=='game')ONL.st='idle'});c.on('error',e=>onlLog('Connection error: '+(e.type||e)))}
 function onlRtt(){const a=ONL.ping.slice().sort((x,y)=>x-y);return a.length?a[a.length>>1]:100}
-function onlDelay(r){return clamp(Math.ceil(r/2/16.67)-1,1,3)}
-function onlStart(){if(!ONL||!ONL.conn)return;const o={mapI,itemsOn,itemOn:{...itemOn},COMP,stI,TIMER,NERV,maxC,seed:(Math.random()*1e9|0)||1};ONL.conn.send({t:'go',o});onlGo({o})}
-function onlGo(m){const o=m.o;Object.assign(itemOn,o.itemOn||{});({mapI,itemsOn,COMP,stI,TIMER,NERV,maxC}=o);nP=2;nH=2;TEAMS=false;const c=ONL.conn,r=onlRtt();
- start('game');seed=o.seed;for(const p of P)p.cpu=false;NET=netNew(ONL.role,x=>{try{c.open&&c.send(x)}catch(e){}},onlDelay(r));NET.rtt=r;NET.lastMsg=performance.now();ONL.st='game';
+function onlDelay(r){return clamp(Math.round(r/2/16.67),2,4)}
+const NETV=(()=>{let h=7;try{for(const sc of document.scripts){const t=sc.text||'';h=(h*31+t.length)|0;for(let i=0;i<t.length;i+=997)h=(h*31+t.charCodeAt(i))|0}}catch(e){}return 'v'+(h>>>0).toString(36)})();
+function netBoot(o){Object.assign(itemOn,o.itemOn||{});({mapI,itemsOn,COMP,stI,TIMER,NERV,maxC}=o);nP=2;nH=2;TEAMS=false;const dn=Date.now,w0=W,M=ALLM()[mapI]||MAPS[0];Date.now=()=>o.dn;if(!M.w&&o.mw)W=o.mw*SC;
+ try{start('game')}finally{Date.now=dn;W=w0}seed=o.seed;for(const p of P)p.cpu=false}
+function onlStart(){if(!ONL||!ONL.conn)return;const o={v:NETV,dn:Date.now(),mw:Math.round(W/SC),mapI,itemsOn,itemOn:{...itemOn},COMP,stI,TIMER,NERV,maxC,seed:(Math.random()*1e9|0)||1};ONL.conn.send({t:'go',o});onlGo({o})}
+function onlGo(m){const o=m.o,c=ONL.conn,r=onlRtt();if(o.v!==NETV){onlLog('Different game versions: both players must use the SAME file.');try{c.send({t:'bye',why:'version'})}catch(e){}ONL.st='idle';return}
+ netBoot(o);NET=netNew(ONL.role,x=>{try{c.open&&c.send(x)}catch(e){}},onlDelay(r));NET.rtt=r;NET.lastMsg=performance.now();ONL.st='game';
  big(ONL.role?'ONLINE: YOU ARE P2':'ONLINE: YOU ARE P1',COLS[ONL.role],40);sfx('ok00')}
 {const N0=nav;nav=ev=>{if(mode!=='online')return N0(ev);const L=onlItems();if(ev==='up'){ONL.sel=(ONL.sel+L.length-1)%L.length;sfx('se_select00',.6)}else if(ev==='down'){ONL.sel=(ONL.sel+1)%L.length;sfx('se_select00',.6)}else if(ev==='ok'){const it=L[ONL.sel];if(it&&it.f)it.f();sfx('ok00')}else if(ev==='back'){onlClose();mode='menu'}}}
 function onlItems(){const s=ONL.st;return s==='idle'?[{t:'HOST A MATCH',f:onlHost},{t:'JOIN WITH A CODE',f:onlJoin},{t:'BACK',f:()=>{onlClose();mode='menu'}}]:[{t:'CANCEL',f:()=>{onlClose();onlOpen()}}]}
