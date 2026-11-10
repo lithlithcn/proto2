@@ -4309,10 +4309,11 @@ const lbAt=(p,a,sp,d,r,life,x,y)=>{const b=lb(p,a,sp,d,r,life);if(b){b.x=x+Math.
 const EST={},EDR={};
 const stF=(x,y,r,c)=>{starPath(x,y,r,frame*.1);ctx.fillStyle=c||'#ffe14a';ctx.fill()};
 // rayon soutenu : télégraphe puis touches répétées (ev = délai entre deux touches sur la même cible)
+const LZ_TELE=60,LZ_GAP=60; // lasers droits Marisa/Okina : 1 s d'avertissement (tirets) puis 1 s de pause après le rayon
 function chRay(p,o){ENT.push(Object.assign({k:'cray',o:p.id,t:o.T,T:o.T,a:p.aim,w:10,len:900,tele:20,dmg:2,ev:6,kb:4,stun:14,c:'#fff',spin:0,follow:1,x:p.x,y:p.y,hc:{}},o))}
 function chStep(){
  for(const e of ENT){if(e.t<=0)continue;const o=P[e.o];if(!o)continue;
-  if(e.k==='cray'){if(e.follow){e.x=o.x;e.y=o.y}e.a+=e.spin;if(e.push){o.vx-=Math.cos(e.a)*e.push;o.vy-=Math.sin(e.a)*e.push}
+  if(e.k==='cray'){if(e.follow){e.x=o.x;e.y=o.y}e.a+=e.spin;if(e.push&&!(e.warn&&e.T-e.t<e.tele)){o.vx-=Math.cos(e.a)*e.push;o.vy-=Math.sin(e.a)*e.push}
    if(e.T-e.t<e.tele)continue;const x2=e.x+Math.cos(e.a)*e.len,y2=e.y+Math.sin(e.a)*e.len;
    if(e.clr)for(const b of B)if(!b.dead&&!b.heavy&&b.owner!==e.o&&segD(b.x,b.y,e.x,e.y,x2,y2)<e.w+b.r)b.dead=1;
    for(const q of P)if(foeQ(o,q)&&!(e.nodash&&q.state==='dash')&&!((e.hc[q.id]||0)>frame)&&segD(q.x,q.y,e.x,e.y,x2,y2)<bodyR(q)+e.w){e.hc[q.id]=frame+e.ev;chHitQ(o,q,Math.cos(e.a),Math.sin(e.a),e.dmg,e.kb,e.stun)}}
@@ -4323,7 +4324,9 @@ function chStep(){
   if(b.ct&&frame===b.ct){const a=Math.atan2(b.ty-b.y,b.tx-b.x);b.vx=Math.cos(a)*7;b.vy=Math.sin(a)*7}
   if(b.hgr)for(const q of P)if(q.id!==b.owner&&q.state!=='dead'&&foeOf(b.owner,q)){const dx=b.x-q.x,dy=b.y-q.y,d=Math.hypot(dx,dy);if(d<80&&d>1){q.vx+=dx/d*.22;q.vy+=dy/d*.22}}}}
 EDR.cray=e=>{const age=e.T-e.t,x2=e.x+Math.cos(e.a)*e.len,y2=e.y+Math.sin(e.a)*e.len;ctx.save();ctx.lineCap='round';
- if(age<e.tele){ctx.globalAlpha=.35+.3*Math.sin(frame*.8);ctx.strokeStyle=e.c;ctx.lineWidth=2;ctx.setLineDash([8,6]);ctx.beginPath();ctx.moveTo(e.x,e.y);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();return}
+ if(age<e.tele){if(e.warn){const pr=age/e.tele; // avertissement long : tirets, clignote de plus en plus vite, blancs juste avant le tir
+  ctx.lineCap='butt';ctx.globalAlpha=.4+.35*(.5+.5*Math.sin(frame*(.3+pr*1.2)));ctx.strokeStyle=e.tele-age<10?'#fff':e.c;ctx.lineWidth=Math.max(3,e.w);ctx.setLineDash([16,12]);ctx.beginPath();ctx.moveTo(e.x,e.y);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();return}
+  ctx.globalAlpha=.35+.3*Math.sin(frame*.8);ctx.strokeStyle=e.c;ctx.lineWidth=2;ctx.setLineDash([8,6]);ctx.beginPath();ctx.moveTo(e.x,e.y);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();return}
  const k=Math.min(1,e.t/6),fl=1+.12*Math.sin(frame*1.3);ctx.globalCompositeOperation='lighter';
  for(const[w,al,c]of[[e.w*2.6,.18,e.c],[e.w*1.7,.45,e.c],[e.w*.8,.9,'#fff']]){ctx.globalAlpha=al*k;ctx.strokeStyle=c;ctx.lineWidth=Math.max(1,w*fl);ctx.beginPath();ctx.moveTo(e.x,e.y);ctx.lineTo(x2,y2);ctx.stroke()}ctx.restore()};
 // effets de mêlée : forme (arc / thrust / ring), couleur, arme dessinée
@@ -4354,10 +4357,10 @@ const SEAC=['#ffb0d6','#ff7a3a','#ffb04a','#bfe8ff'];
 const CHR7=[
 // ================================================================ MARISA : canon de verre, lasers, chaleur du Hakkero
 {k:'marisa',name:'Marisa',col:'#ffd23a',spd:1.04,din:1.1,dout:1,role:'Glass cannon · Lasers + Hakkero heat',
- d:'FOCUS: heat the Hakkero (bigger heavies, overheat burns you). HEAVY: Master Spark / Narrow Spark (toward) / Stardust Reverie (away), lasers need 1.5 s to recharge. DASH: Blazing Star, DASH + HEAVY = rear laser boost. SKILL 2: star potion. SKILL 1: Non-Directional Laser.',
+ d:'FOCUS: heat the Hakkero (bigger heavies, overheat burns you). HEAVY: Master Spark / Narrow Spark (toward) / Stardust Reverie (away), lasers show a 1 s warning, then need 1 s to recharge. DASH: Blazing Star, DASH + HEAVY = rear laser boost. SKILL 2: star potion. SKILL 1: Non-Directional Laser.',
  cd:9,shot(p,a,f,pm,lv){const n=2+Math.min(3,lv);for(let i=0;i<n;i++){const b=chB(p,a+(i/(n-1)-.5)*.7,7,pm*1.7/n,6,90);if(b){b.mst=frame;b.c=i%2?'#7cff7a':'#ffe14a'}}},
- heavy:{N:(p,m,a,k)=>{const h=mHm(p);p.mLz=frame+90;chRay(p,{T:70,tele:26,w:14*h,len:1000,dmg:1.5*h*k,ev:7,kb:6,stun:18,c:'#ffe060',push:.35,clr:1,a});sfx('heavymasterspark',.8);shake=Math.min(28,shake+6)},
-  F:(p,m,a,k)=>{const h=mHm(p);p.mLz=frame+90;chRay(p,{T:10,tele:3,w:4*h,len:800,dmg:5*h*k,ev:99,kb:8,stun:22,c:'#fff6a0',a,follow:0});sfx('se_lazer00',.5)},
+ heavy:{N:(p,m,a,k)=>{if(p.mLz>frame)return;const h=mHm(p);p.mLz=frame+LZ_TELE+44+LZ_GAP;chRay(p,{T:LZ_TELE+44,tele:LZ_TELE,warn:1,w:14*h,len:1000,dmg:1.5*h*k,ev:7,kb:6,stun:18,c:'#ffe060',push:.35,clr:1,a});sfx('heavymasterspark',.8);shake=Math.min(28,shake+6)},
+  F:(p,m,a,k)=>{if(p.mLz>frame)return;const h=mHm(p);p.mLz=frame+LZ_TELE+7+LZ_GAP;chRay(p,{T:LZ_TELE+7,tele:LZ_TELE,warn:1,w:4*h,len:800,dmg:5*h*k,ev:99,kb:8,stun:22,c:'#fff6a0',a,follow:0});sfx('se_lazer00',.5)},
   B:(p,m,a,k)=>{const h=mHm(p);for(let i=0;i<7;i++){spawnH(p,m,a+(i-3)*.22,k,{spd:5.5,r:Math.round(9*Math.min(1.6,h)),k:.28*h});const b=B[B.length-1];if(b&&b.owner===p.id){b.mst=frame;b.c=['#ffe14a','#7cff7a','#4ab3ff'][i%3]}}}},
  melee:{jab:{start:5,act:5,rec:13,range:52,arc:2.2,dmg:6,kb:7,stun:22},lunge:{start:6,act:12,rec:20,range:40,arc:1.2,dmg:9,kb:11,stun:28,move:22},
   strong:{start:8,act:4,rec:26,range:70,arc:6.2832,dmg:14,kb:16,stun:40,charge:40},dashatk:{start:2,act:7,rec:18,range:50,arc:1.4,dmg:9,kb:12,stun:28,keep:.97}},
@@ -4437,15 +4440,18 @@ const CHR7=[
   mvFx(q,R,{jab:['thrust','#8a2ad0',W_.trident],lunge:['thrust','#4a4aff',W_.trident],strong:['arc','rgba(140,60,255,.45)',W_.trident],dashatk:['arc','rgba(60,200,90,.5)',(x,y,a,L)=>{ctx.beginPath();for(let i=0;i<=12;i++){const d=L*i/12,o=Math.sin(i*1.2+frame*.4)*6;ctx.lineTo(x+Math.cos(a)*d-Math.sin(a)*o,y+Math.sin(a)*d+Math.cos(a)*o)}ctx.strokeStyle='#3ac05a';ctx.lineWidth=4;ctx.stroke()}]})}},
 // ================================================================ OKINA : portes, saisons, danseurs
 {k:'okina',name:'Okina',col:'#ffd23a',spd:.98,din:1,dout:1,role:'Controller · Doors, seasons, backup dancers',
- d:'SKILL 2: place a door (max 3); every door copies all your shots, aimed at the nearest foe. FOCUS: only the doors shoot. DASH: travel through a door. SHOT: season changes every 5 s (spring heals, summer fast, autumn pushes, winter slows). HEAVY: big door swallows and spits bullets / ray through doors / leaf whirl. SKILL 1: place Satono, SKILL 1 again: place Mai (5 s). They dance in place, shoot easy patterns and kick anyone close toward their sister.',
+ d:'SKILL 2: place a door (max 3); every door copies all your shots, aimed at the nearest foe. FOCUS: only the doors shoot. DASH: travel through a door. SHOT: season changes every 5 s (spring heals, summer fast, autumn pushes, winter slows). HEAVY: big door swallows and spits bullets / ray through doors (1 s warning, then 1 s recharge) / leaf whirl. SKILL 1: place Satono, SKILL 1 again: place Mai (5 s). They dance in place, shoot easy patterns and kick anyone close toward their sister.',
  cd:8,shot(p,a,f,pm,lv){const s=p.chM|0,D=myE(p,'odr'),src=(f&&D.length?[]:[[p.x,p.y,1]]).concat(D.map(d=>[d.x,d.y,0])),k=pm*(src.length>1?1.3/src.length:1);
   for(const[x,y,me]of src){const q=me?null:nearFoe(p.id,x,y,1500),aa=q?Math.atan2(q.y-y,q.x-x):a,mk=(o,sp,dm,r)=>{const b=lbAt(p,aa+o,sp,dm,r,120,x,y);if(b){b.c=SEAC[s];if(s!==1)b.sea=[1,0,3,4][s];if(s===2){b.wav=.1;b.ph=o*9}}};
    if(s===0)for(const o of[-.1,.1])mk(o,6,k*.55,5);else if(s===1)for(const o of[-.08,0,.08])mk(o,11,k*.4,4);else if(s===2)for(const o of[-.15,0,.15])mk(o,5,k*.5,5);else for(const o of[-.08,.08])mk(o,7,k*.55,5)}},
  heavy:{N:(p,m,a,k)=>{ENT.push({k:'obd',o:p.id,t:90,T:90,x:p.x+Math.cos(a)*60,y:p.y+Math.sin(a)*60,a,n:0});sfx('blockshield',.6)},
-  F:(p,m,a,k)=>{chRay(p,{T:16,tele:8,w:8,len:900,dmg:8*k,ev:99,kb:8,stun:24,c:'#ffd23a',a,follow:0});for(const d of myE(p,'odr')){const q=nearFoe(p.id,d.x,d.y,1500);if(q)chRay(p,{T:16,tele:8,w:7,len:900,dmg:6*k,ev:99,kb:8,stun:24,c:'#ffd23a',a:Math.atan2(q.y-d.y,q.x-d.x),follow:0,x:d.x,y:d.y})}sfx('se_lazer00',.6)},
+  F:(p,m,a,k)=>{if(p.oLz>frame)return;p.oLz=frame+LZ_TELE+8+LZ_GAP;chRay(p,{T:LZ_TELE+8,tele:LZ_TELE,warn:1,w:8,len:900,dmg:8*k,ev:99,kb:8,stun:24,c:'#ffd23a',a,follow:0});for(const d of myE(p,'odr')){const q=nearFoe(p.id,d.x,d.y,1500);if(q)chRay(p,{T:LZ_TELE+8,tele:LZ_TELE,warn:1,w:7,len:900,dmg:6*k,ev:99,kb:8,stun:24,c:'#ffd23a',a:Math.atan2(q.y-d.y,q.x-d.x),follow:0,x:d.x,y:d.y})}sfx('se_lazer00',.6)},
   B:(p,m,a,k)=>{for(let i=0;i<12;i++){spawnH(p,m,a+i*TAU/12,k,{spd:3,r:7,k:.15,life:200});const b=B[B.length-1];if(b&&b.owner===p.id){b.wav=.08;b.ph=i;b.c='#ffb04a'}}}},
  melee:{jab:{start:5,act:4,rec:14,range:46,arc:6.2832,dmg:5,kb:9,stun:20},lunge:{start:8,act:8,rec:18,range:110,arc:.6,dmg:8,kb:10,stun:26},strong:{start:12,act:6,rec:28,range:120,arc:6.2832,dmg:13,kb:16,stun:40,charge:40}},
  spell:{name:'Secret Ceremony「Four Seasons at Once」',loop:200,fn(p,o,k){if(k%6===0)for(let i=0;i<4;i++){addB(p,k*.05+i*TAU/4,3.4,0,null,220);const b=B[B.length-1];if(b&&b.owner===p.id){b.c=SEAC[i];if(i!==1)b.sea=[1,0,3,4][i]}}}},
+ inp(p,o,I){const h=!!I.b.heavy,e=h&&!p.oHp;p.oHp=h; // rayon droit : 1 s de pause entre deux rayons
+  if(h&&p.oLz>frame&&p.state==='idle'&&rel(I,p)==='F'){if(e)cdT(p,'LASER',p.oLz);return{...I,b:{...I.b,heavy:false}}}
+  return I},
  special(p){if(!chCool(p,40))return;ENT.push({k:'odr',o:p.id,t:1800,x:p.x,y:p.y});capE(p,'odr',3);RINGS.push({x:p.x,y:p.y,r:0,m:40,t:12,c:'#ffd23a'});sfx('gapopening',.6)},
  special2(p){const D=myE(p,'odn');
   if(D.length===1&&D[0].i===0&&!p.oMai){ENT.push({k:'odn',o:p.id,t:300,i:1,x:p.x,y:p.y,hc:{},cd:30,n:0});D[0].t=Math.max(D[0].t,300);p.oMai=1;sfx('taikorouge',.8);return}
