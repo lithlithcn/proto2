@@ -81,7 +81,7 @@ const COLS=['#ff4a5a','#ffd23a','#4ab3ff','#5cff8a'],LCOLS=['#ff9aa4','#ffe98a',
 // ================= Touches (configurables, sauvegardées dans le navigateur) =================
 const ACTS=['up','down','left','right','shot','heavy','melee','dash','parry','burst','spell','focus','prev','next'];
 const BTN=ACTS.slice(4);
-const ACT_FR={up:'Up',down:'Down',left:'Left',right:'Right',shot:'Shot',heavy:'Heavy',melee:'Melee',dash:'Dash',parry:'Parry',burst:'Burst',spell:'Spell card',focus:'Focus',prev:'Skill 1',next:'Skill 2'};
+const ACT_FR={up:'Up',down:'Down',left:'Left',right:'Right',shot:'Shot',heavy:'Heavy',melee:'Melee',dash:'Dash',parry:'Parry',burst:'Skill 2',spell:'Spell card',focus:'Focus',prev:'Skill 1',next:'Skill 2 (alt)'};
 const DEF_KB=[ // codes physiques : KeyW/A/S/D = Z/Q/S/D sur AZERTY
  {up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',shot:'KeyJ',heavy:'KeyK',melee:'KeyL',dash:'Space',parry:'KeyI',burst:'KeyU',spell:'KeyO',focus:'ShiftLeft',prev:'KeyE',next:'KeyR'},
  {up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight',shot:'Numpad1',heavy:'Numpad2',melee:'Numpad3',dash:'Numpad0',parry:'Numpad5',burst:'Numpad7',spell:'Numpad6',focus:'Numpad4',prev:'Numpad8',next:'Numpad9'}];
@@ -140,8 +140,8 @@ const TCH={on:false,joy:null,jx:0,jy:0,b:{},ids:new Map(),auto:true};
 const tU=()=>Math.min(W,H)/7.2;
 function tBtns(){const u=tU(),cx=W-2.1*u,cy=H-2.05*u,s=1.25*u,r=.68*u,y2=H-4.6*u;return[ // pavé façon manette : le pouce droit tourne autour d'ATK
  {k:'melee',x:cx+s,y:cy,r:r*1.12,l:'ATK',c:'#ff6a6a'},{k:'dash',x:cx,y:cy+s*.85,r,l:'DASH',c:'#6cf'},{k:'heavy',x:cx-s,y:cy,r,l:'HEAVY',c:'#ffa63a'},{k:'parry',x:cx,y:cy-s*.85,r,l:'PARRY',c:'#6ff'},
- {k:'focus',x:cx-s*2.1,y:cy+s*.6,r:r*.78,l:'FOCUS',c:'#ddd'},{k:'next',x:cx-s*2.1,y:cy-s*.7,r:r*.62,l:'SKILL 2',c:'#aaa'},{k:'prev',x:cx-s*3.2,y:cy-s*.05,r:r*.62,l:'SKILL 1',c:'#c9f'},
- {k:'burst',x:W-3.6*u,y:y2,r:.55*u,l:'BURST',c:'#fc4'},{k:'spell',x:W-2.3*u,y:y2,r:.55*u,l:'SPELL',c:'#f8f'},{k:'shot',x:W-1*u,y:y2,r:.5*u,l:'AUTO',c:'#8f8',tog:1},
+ {k:'focus',x:cx-s*2.1,y:cy+s*.6,r:r*.78,l:'FOCUS',c:'#ddd'},{k:'prev',x:cx-s*2.1,y:cy-s*.7,r:r*.62,l:'SKILL 1',c:'#c9f'},
+ {k:'burst',x:W-3.6*u,y:y2,r:.55*u,l:'SKILL 2',c:'#fc4'},{k:'spell',x:W-2.3*u,y:y2,r:.55*u,l:'SPELL',c:'#f8f'},{k:'shot',x:W-1*u,y:y2,r:.5*u,l:'AUTO',c:'#8f8',tog:1},
  {k:'pause',x:W/2,y:H-.6*u,r:.42*u,l:'II',c:'#fff',tog:1}]}
 const tOver=()=>paused&&!(TEST&&TEST.train)||winner>=0&&winT>=100; // boutons de l'écran de pause / fin
 const tOvB=()=>{const u=tU();return[{x:W/2-3.1*u,y:H*.62,w:2.9*u,h:u,l:paused?'RESUME':'REMATCH',ev:'ok'},{x:W/2+.2*u,y:H*.62,w:2.9*u,h:u,l:'MENU',ev:'back'}]};
@@ -190,7 +190,7 @@ function tDraw(){if(!TCH.on)return;const u=tU(),me=P.find(p=>!p.cpu);ctx.save();
   ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(bx+TCH.jx*R,by+TCH.jy*R,R*.45,0,TAU);ctx.fill();
   for(const b of tBtns()){const on=b.tog?b.k==='shot'&&TCH.auto:TCH.b[b.k];ctx.globalAlpha=on?.45:.13;ctx.fillStyle=b.c;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,TAU);ctx.fill();
    ctx.globalAlpha=on?.9:.3;ctx.strokeStyle=b.c;ctx.lineWidth=2;ctx.stroke();
-   if(me&&(b.k==='spell'||b.k==='burst')){const f=b.k==='spell'?(me.ult?1:me.spirit/T.SPELL_COST):me.burst/T.BURST_MAX,full=f>=1;ctx.globalAlpha=.6;ctx.lineWidth=3;ctx.strokeStyle=full?'#fff':b.c;ctx.beginPath();ctx.arc(b.x,b.y,b.r+3,-Math.PI/2,-Math.PI/2+TAU*Math.min(1,f));ctx.stroke();
+   if(me&&(b.k==='spell'||b.k==='burst')){const f=b.k==='spell'?(me.ult?1:me.spirit/T.SPELL_COST):(me.chCD||0)<=frame?1:.3,full=f>=1;ctx.globalAlpha=.6;ctx.lineWidth=3;ctx.strokeStyle=full?'#fff':b.c;ctx.beginPath();ctx.arc(b.x,b.y,b.r+3,-Math.PI/2,-Math.PI/2+TAU*Math.min(1,f));ctx.stroke();
     if(full&&(frame>>3)%2){ctx.globalAlpha=.18;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,TAU);ctx.fill()}}
    ctx.globalAlpha=on?1:.8;ctx.fillStyle='#fff';ctx.font='bold '+Math.max(10,b.r*.42|0)+'px monospace';ctx.fillText(b.k==='spell'&&me&&me.ult?'LAST':b.l,b.x,b.y)}}
  ctx.restore()}
@@ -821,7 +821,7 @@ function updItem(){ // plusieurs cartes possibles en même temps (option)
  let prog=false;
  for(let k=CARDS.length-1;k>=0;k--){const c=CARDS[k];item=c;if(!c.on){if(++c.age>=T.ITEM_WARN)c.on=true;continue}
   const ins=P.map(p=>p.state!=='dead'&&p.state!=='hitstun'&&Math.hypot(p.x-c.x,p.y-c.y)<T.ITEM_R+T.BODY_R);c.cont=ins.filter(Boolean).length>1;
-  for(let i=0;i<P.length;i++){if(ins[i]&&!c.cont){c.cp[i]++;prog=true}else if(!ins[i])c.cp[i]=Math.max(0,c.cp[i]-2);
+  for(let i=0;i<P.length;i++){if(ins[i]&&!c.cont){c.cp[i]+=P[i].state==='spell'?.4:1;prog=true}else if(!ins[i])c.cp[i]=Math.max(0,c.cp[i]-2);
    if(c.cp[i]>=capOf(c)){CARDS.splice(k,1);give(P[i],c.type);itemT=0;break}}}
  item=CARDS[0]||null;
  if(prog&&!loadSrc)loadSrc=sfx('loadvrai2',.6);else if(!prog)stopLoad()} // son de chargement tant qu'on remplit une jauge
@@ -3126,6 +3126,10 @@ function onlOb(o,m){const b=o.ob||(o.ob=[]);if(m.t==='i'){const j=b.findIndex(x=
 function onlRelay(m,k){const net=m.t==='i'||m.t==='c';for(const o of ONL.cl)if(o!==k&&o.c.open){if(net)onlOb(o,m);else try{o.c.send(m)}catch(e){}}}
 function onlFlush(){if(!ONL||!ONL.cl)return;for(const o of ONL.cl){if(!o.ob||!o.ob.length||!o.c.open)continue;const dc=o.c.dataChannel;if(dc&&dc.bufferedAmount>16000)continue;try{o.c.send({t:'B',a:o.ob})}catch(e){}o.ob=[]}}
 setInterval(()=>{if(NET&&ONL&&ONL.id===0)onlFlush()},20);
+// diagnostic : connexion directe ou relayée par un serveur TURN (plus lent), ping réel, débit — toutes les 2 s, hors simulation
+async function onlLink(c){try{const pc=c&&c.peerConnection;if(!pc)return null;const st=await pc.getStats();let pr=null,lo={},re={};st.forEach(r=>{if(r.type==='candidate-pair'&&r.state==='succeeded'&&(r.nominated||r.selected)&&(!pr||r.bytesSent>pr.bytesSent))pr=r});if(!pr)return null;
+ st.forEach(r=>{if(r.id===pr.localCandidateId)lo=r;if(r.id===pr.remoteCandidateId)re=r});return{relay:lo.candidateType==='relay'||re.candidateType==='relay',rtt:(pr.currentRoundTripTime||0)*1000,b:(pr.bytesSent||0)+(pr.bytesReceived||0),t:performance.now()}}catch(e){return null}}
+setInterval(async()=>{if(!ONL||!NET)return;const L=ONL.id===0?ONL.cl.map(k=>[k.id,k.c]):[[0,ONL.conn]],D=ONL.diag||(ONL.diag={});for(const[i,c]of L){const r=await onlLink(c);if(!r)continue;const o=D[i];r.kbs=o&&r.t>o.t?(r.b-o.b)/((r.t-o.t)/1000)/1024:0;D[i]=r}},2000);
 setInterval(()=>{if(!NET||!ONL||ONL.id!==0||mode!=='game')return;const t=performance.now();for(const k of ONL.cl.slice())if(k.lm&&t-k.lm>5000)onlHostLost(k,'timeout')},1000);
 function onlBcast(m){for(const o of ONL.cl)if(o.c.open)try{o.c.send(m)}catch(e){}}
 function onlDelayN(){const r=ONL.cl.map(k=>k.rtt||100).sort((a,b)=>b-a),w=r.length>1?(r[0]+r[1])/2:r[0]||100;return {D:clamp(Math.round(w/2/16.67),2,5),lat:w/2}}
@@ -3182,7 +3186,8 @@ function drawOnline(){hot=[];uiHeader('ONLINE','2 TO 4 PLAYERS');ctx.textAlign='
   c.fillText('ONLINE '+N.n+'P  ping '+(N.rtt|0)+'ms  delay '+N.D+'  rollbacks '+N.rbN+' (max '+N.rbMax+')'+(N.desync>=0?'  DESYNC @'+N.desync:''),8,H-8);const q=performance.now()-N.lastMsg;
   if(N.ended||q>2500){c.textAlign='center';c.fillStyle='rgba(0,0,0,.6)';c.fillRect(0,H/2-40,W,80);c.fillStyle='#ffd23a';c.font='bold 26px monospace';c.fillText(N.ended?'THE HOST LEFT · press Esc':'CONNECTION LOST... waiting',W/2,H/2+8);if(q>9000&&!N.ended)N.ended=true}
   else if(N.stT&&performance.now()-N.stT>400&&N.stW!==undefined){c.textAlign='center';c.fillStyle='rgba(0,0,0,.55)';c.fillRect(0,H*.2-22,W,34);c.fillStyle='#ffd23a';c.font='bold 18px monospace';c.fillText('Waiting for P'+(N.stW+1)+(NETNAMES&&NETNAMES[N.stW]?' ('+NETNAMES[N.stW]+')':'')+'… '+((performance.now()-N.stT)/1000).toFixed(1)+'s',W/2,H*.2)}
-  if(N.dbg){c.textAlign='left';c.font='12px monospace';c.fillStyle='rgba(0,0,0,.7)';c.fillRect(6,H*.3-16,330,22+N.n*16);c.fillStyle='#9ff';c.fillText('NET DEBUG (F9)  frame '+N.f+'  sim '+(N.tms||0).toFixed(1)+'ms  stalls '+N.stall,12,H*.3);for(let i=0;i<N.n;i++){const lm=N.lm&&N.lm[i]?performance.now()-N.lm[i]:0;c.fillStyle=i===N.L?'#fff':lm>1000?'#f66':'#cfc';c.fillText('P'+(i+1)+(i===N.L?' (you)':'')+'  behind '+(N.f-N.conf[i])+'f  last msg '+(i===N.L?'-':(lm|0)+'ms')+(N.rttP&&N.rttP[i]?'  ping '+(N.rttP[i]|0):''),12,H*.3+16+i*16)}}c.restore()}}}
+  if(N.dbg){c.textAlign='left';c.font='12px monospace';c.fillStyle='rgba(0,0,0,.7)';c.fillRect(6,H*.3-16,600,40+N.n*16);c.fillStyle='#9ff';c.fillText('NET DEBUG (F9)  frame '+N.f+'  sim '+(N.tms||0).toFixed(1)+'ms  stalls '+N.stall,12,H*.3);for(let i=0;i<N.n;i++){const lm=N.lm&&N.lm[i]?performance.now()-N.lm[i]:0;c.fillStyle=i===N.L?'#fff':lm>1000?'#f66':'#cfc';c.fillText('P'+(i+1)+(i===N.L?' (you)':'')+'  behind '+(N.f-N.conf[i])+'f  last msg '+(i===N.L?'-':(lm|0)+'ms')+(N.rttP&&N.rttP[i]?'  ping '+(N.rttP[i]|0):'')+(ONL.diag&&ONL.diag[i]?(ONL.diag[i].relay?'  RELAY (TURN server)':'  direct')+'  '+(ONL.diag[i].rtt|0)+'ms  '+ONL.diag[i].kbs.toFixed(1)+'KB/s':''),12,H*.3+16+i*16)}c.fillStyle='#aaa';c.fillText(ONL.id===0?'(host: you see every link)':'(only your link to the host is shown, the host sees all)',12,H*.3+16+N.n*16)}
+  if(ONL.diag&&Object.values(ONL.diag).some(d=>d.relay)){c.textAlign='right';c.fillStyle='#f66';c.font='bold 12px monospace';c.fillText('⚠ a player goes through a relay server (slower) · F9',W-8,H-8)}c.restore()}}}
 
 // enregistrement des replays : en DERNIER pour capturer l'entrée finale
 {const H0=readHuman;readHuman=i=>{const I=H0(i);return P[i]?recIn(P[i],I):I}}
@@ -3643,7 +3648,7 @@ function drawHUD(p,x,right,y=30){if(CX.anon>0||p.fx&&p.fx.koishi>0)return; // HU
  ctx.textAlign=right?'left':'right';ctx.fillStyle='#ff7090';ctx.fillText(p.stocks>6?'♥ x'+p.stocks:'♥'.repeat(Math.max(0,p.stocks)),right?X:X+w,y-3);
  const hc=hp>50?'#4e6':hp>25?'#ec4':'#f44';bar(X,y+3,w,14,hp/T.HP,hc);ctx.textAlign='center';ctx.font='bold 11px monospace';ctx.fillStyle='#000';ctx.fillText(Math.ceil(hp)+' HP',X+w/2,y+14);
  const sr=p.spirit>=T.SPELL_COST;bar(X,y+21,w,10,p.spirit/T.SPIRIT_MAX,p.ult?rainbowCol():sr?'#f8f':'#58c');ctx.font='bold 9px monospace';ctx.fillStyle=sr||p.ult?'#000':'#fff';ctx.fillText(p.ult?'LAST WORD READY':sr?'SPELL READY':'SPELL '+Math.min(99,p.spirit/T.SPELL_COST*100|0)+'%',X+w/2,y+29);
- const br=p.burst>=T.BURST_MAX;bar(X,y+35,w*.5,9,p.burst/T.BURST_MAX,br?'#fc4':'#7a5a30');ctx.fillStyle=br?'#000':'#ddd';ctx.fillText(br?'BURST READY':'BURST',X+w*.25,y+42);
+ const sk=Math.max(0,(p.chCD||0)-frame),br=!sk;bar(X,y+35,w*.5,9,br?1:Math.max(.05,1-sk/600),br?'#fc4':'#7a5a30');ctx.fillStyle=br?'#000':'#ddd';ctx.fillText(br?'SKILL 2 READY':'SKILL 2 '+Math.ceil(sk/60)+'s',X+w*.25,y+42);
  for(let i=0;i<T.DASH_CHARGES;i++){const f=clamp(p.boost-i,0,1),xx=X+w*.53+i*17;ctx.fillStyle='#262a33';ctx.fillRect(xx,y+35,14,9);ctx.fillStyle=f>=1?'#fff':'#8a8f9a';ctx.fillRect(xx,y+35,14*f,9)}
  for(let i=0;i<T.PIPS;i++){ctx.fillStyle=i<p.pips?'#f55':'#3a2226';ctx.fillRect(X+w-(T.PIPS-i)*15+3,y+35,12,9)}
  ctx.fillStyle='#8a8f9a';ctx.font='8px monospace';ctx.fillText('DASH',X+w*.53+25,y+52);ctx.fillText('WALL',X+w-22,y+52);
@@ -3940,7 +3945,7 @@ drawHUD=function(p,x,right,y=30){if(CX.anon>0||p.fx&&p.fx.koishi>0)return;const 
  for(let k=T.SPELL_COST;k<T.SPIRIT_MAX;k+=T.SPELL_COST){ctx.fillStyle='rgba(255,255,255,.5)';ctx.fillRect(X+w*k/T.SPIRIT_MAX,y+22,1.5,10)}
  if(sr||p.ult){ctx.save();skw(X,y+22,w*sf,10,4);ctx.clip();const sw=((now*1.4)%1.2)/1.2*w*1.4-w*.2,gg=ctx.createLinearGradient(X+sw-40,0,X+sw+40,0);gg.addColorStop(0,'rgba(255,255,255,0)');gg.addColorStop(.5,'rgba(255,255,255,.8)');gg.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=gg;ctx.fillRect(X,y+22,w,10);ctx.restore()}
  ctx.font=UF(900,9);ctx.fillStyle=sr||p.ult?'#05060c':'#fff';ctx.fillText(p.ult?'LAST WORD READY':sr?'SPELL READY':'SPELL '+Math.min(99,p.spirit/T.SPELL_COST*100|0)+'%',X+w/2,y+30);
- const br=p.burst>=T.BURST_MAX;sbar(X,y+36,w*.5,9,p.burst/T.BURST_MAX,br?'#ffe680':'#c89a50',br?'#ff9a00':'#6a4a20',3);if(br){ctx.save();ctx.globalAlpha=.4+.4*Math.sin(now*7);ctx.strokeStyle='#ffd23a';ctx.lineWidth=2;skw(X,y+36,w*.5,9,3);ctx.stroke();ctx.restore()}ctx.fillStyle=br?'#05060c':'#eee';ctx.font=UF(900,8);ctx.fillText(br?'BURST READY':'BURST',X+w*.25,y+43);
+ const sk=Math.max(0,(p.chCD||0)-frame),br=!sk;sbar(X,y+36,w*.5,9,br?1:Math.max(.05,1-sk/600),br?'#ffe680':'#c89a50',br?'#ff9a00':'#6a4a20',3);if(br){ctx.save();ctx.globalAlpha=.4+.4*Math.sin(now*7);ctx.strokeStyle='#ffd23a';ctx.lineWidth=2;skw(X,y+36,w*.5,9,3);ctx.stroke();ctx.restore()}ctx.fillStyle=br?'#05060c':'#eee';ctx.font=UF(900,8);ctx.fillText(br?'SKILL 2 READY':'SKILL 2 '+Math.ceil(sk/60)+'s',X+w*.25,y+43);
  for(let i=0;i<T.DASH_CHARGES;i++){const f=clamp(p.boost-i,0,1),xx=X+w*.53+i*17;ctx.fillStyle='#262a33';skw(xx,y+36,14,9,3);ctx.fill();ctx.fillStyle=f>=1?'#fff':'#8a8f9a';ctx.save();skw(xx,y+36,14,9,3);ctx.clip();ctx.fillRect(xx,y+36,14*f,9);ctx.restore()}
  for(let i=0;i<T.PIPS;i++){const on=i<p.pips;ctx.fillStyle=on?'#ff5a6a':'#3a2226';skw(X+w-(T.PIPS-i)*15+3,y+36,12,9,3);ctx.fill();if(on){ctx.fillStyle='rgba(255,255,255,.35)';ctx.fillRect(X+w-(T.PIPS-i)*15+5,y+36,8,3)}}
  ctx.fillStyle='#8a8f9a';ctx.font=UF(800,7);ctx.fillText('DASH',X+w*.53+25,y+53);ctx.fillText('WALL',X+w-22,y+53);
@@ -4655,7 +4660,7 @@ const CHL=CHR.map((c,i)=>CH0+i);
 // attribution au départ : choix du joueur (écran de sélection) sinon perso par défaut ; spell du perso
 {const S0=start;start=(...a)=>{const r=S0(...a);if(mode==='game'&&!(typeof TUT!=='undefined'&&TUT)){P.forEach((p,i)=>{if(p.shotT<CH0)p.shotT=p.cpu?CHL[(seed+i*3)%CHL.length]:CHL[i%CHL.length];const c=chOf(p);if(c){p.spI=c.spI;c.init&&c.init(p)}})}return r}}
 // Next / Prev : mécanique du perso (pendant les 2 premières secondes : changer de perso, utile en ligne)
-{const U0=updP;updP=(p,o,I)=>{const c=chOf(p);if(c&&I&&I.b&&p.state!=='dead'){if(c.inp)I=c.inp(p,o,I);const nx=!!I.b.next,pv=!!I.b.prev,en=nx&&!p.chPN,ep=pv&&!p.chPP;p.chPN=nx;p.chPP=pv;
+{const U0=updP;updP=(p,o,I)=>{const c=chOf(p);if(I&&I.b&&(I.b.burst||I.b.spell!==undefined)){if(I.b.burst)I={x:I.x,y:I.y,b:{...I.b,next:true,burst:false}};if(p.state==='hitstun'&&I.b.spell&&!p.spHv&&p.spirit>=T.SPELL_COST){p.state='idle';startSpell(p,o)}p.spHv=!!I.b.spell}if(c&&I&&I.b&&p.state!=='dead'){if(c.inp)I=c.inp(p,o,I);const nx=!!I.b.next,pv=!!I.b.prev,en=nx&&!p.chPN,ep=pv&&!p.chPP;p.chPN=nx;p.chPP=pv;
   if(en||ep){if(frame<120&&p.state==='idle'){const j=CHL.indexOf(p.shotT),k=CHL[(j+(en?1:CHL.length-1))%CHL.length];p.shotT=k;const c2=chOf(p);p.spI=c2.spI;c2.init&&c2.init(p);txt(p.x,p.y-34,c2.name,LCOLS[p.id],14);sfx('move',.7)}
    else if(p.state!=='spell'){if(ep&&c.special2)c.special2(p);else c.special(p)}}
   I={x:I.x,y:I.y,b:{...I.b,next:false,prev:false}}}return U0(p,o,I)}}
@@ -4684,6 +4689,9 @@ const CHL=CHR.map((c,i)=>CH0+i);
 {const D0=dash;dash=(p,I)=>{const c=chOf(p);D0(p,I);if(c&&c.dashF&&p.state==='dash')c.dashF(p)}}
 {const W0=drawWorldItems;drawWorldItems=function(){W0();for(const e of ENT)if(e.t>0&&EDR[e.k]){ctx.save();EDR[e.k](e);ctx.restore()}}}
 {const D0=drawP;drawP=q=>{const c=chOf(q);if(c&&c.k==='nue'&&q.nD>frame&&P[q.nDid]){const j=q.nDid,a=COLS[q.id],b=LCOLS[q.id];COLS[q.id]=COLS[j];LCOLS[q.id]=LCOLS[j];try{D0(q)}finally{COLS[q.id]=a;LCOLS[q.id]=b}}else D0(q)}}
+// la spell card fait l'effet de l'ancien burst : repousse, coupe les attaques, efface les balles proches (utilisable même en plein combo)
+{const S0=startSpell;startSpell=(p,o,u)=>{S0(p,o,u);if(p.state!=='spell')return;for(const q of P)if(q!==p&&q.state!=='dead'&&foeOf(p.id,q)){const dx=q.x-p.x,dy=q.y-p.y,d=Math.hypot(dx,dy)||1;if(d<T.BURST_R+bodyR(q)){q.vx+=dx/d*14;q.vy+=dy/d*14;if(q.state==='atk'){q.mv=null;q.state='idle'}}}
+ for(const b of B)if(!b.dead&&b.owner!==p.id&&Math.hypot(b.x-p.x,b.y-p.y)<T.BURST_R)b.dead=1;RINGS.push({x:p.x,y:p.y,r:0,m:T.BURST_R,t:22,c:'#f8f'});shake=Math.min(28,shake+10)}}
 // ---- Reimu : yin-yang rebondissants (ENT 'ryy'), options, barrières (rbar / rbnd), dash = téléport, visuels de mêlée
 function rOpt(p,i,n,f){const L=[[[0,30,0,20]],[[-30,8,-16,20],[30,8,16,20]],[[-30,8,-16,20],[30,8,16,20],[0,32,0,30]],[[-30,8,-16,20],[30,8,16,20],[-16,32,-8,30],[16,32,8,30]]][n-1][i],lx=f?L[2]:L[0],ly=f?L[3]:L[1],c=Math.cos(p.aim),s=Math.sin(p.aim);return[p.x-s*lx-c*ly,p.y+c*lx-s*ly]}
 function rOrbs(p,n){const A=[[0],[-.35,.35],0,[-.6,-.2,.2,.6]][n-1];for(const o of A){const a=p.aim+o;ENT.push({k:'ryy',o:p.id,t:600,x:p.x+Math.cos(a)*24,y:p.y+Math.sin(a)*24,vx:Math.cos(a)*4.5,vy:Math.sin(a)*4.5,r:15,hc:{},bc:0,g:0})}
