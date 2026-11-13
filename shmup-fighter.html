@@ -91,7 +91,7 @@ function resetBinds(){KB=JSON.parse(JSON.stringify(DEF_KB));PAD=[0,1,2,3].map(()
 function saveBinds(){try{localStorage.setItem('sf_binds3',JSON.stringify({KB,PAD}))}catch(e){}}
 resetBinds();try{const s=JSON.parse(localStorage.getItem('sf_binds3'));if(s){s.KB.forEach((x,i)=>KB[i]&&Object.assign(KB[i],x));s.PAD.forEach((x,i)=>PAD[i]&&Object.assign(PAD[i],x));PAD.forEach(M=>{if(Array.isArray(M.burst))M.burst=3;if(M.next===12)M.next=11})}}catch(e){} // ancien burst en combinaison → bouton Y
 const LBL={};try{navigator.keyboard&&navigator.keyboard.getLayoutMap().then(m=>m.forEach((v,k)=>LBL[k]=v.toUpperCase()))}catch(e){}
-const keyName=c=>LBL[c]||{Space:'Space',ShiftLeft:'L Shift',ShiftRight:'R Shift',ControlLeft:'L Ctrl',ControlRight:'R Ctrl',ArrowUp:'↑',ArrowDown:'↓',ArrowLeft:'←',ArrowRight:'→',Enter:'Enter',Tab:'Tab'}[c]||c.replace(/^Key|^Digit/,'').replace('Numpad','Num ');
+const keyName=c=>LBL[c]||{Mouse0:'Mouse L',Mouse1:'Mouse M',Mouse2:'Mouse R',Mouse3:'Mouse 4',Mouse4:'Mouse 5',WheelUp:'Wheel ↑',WheelDown:'Wheel ↓',Space:'Space',ShiftLeft:'L Shift',ShiftRight:'R Shift',ControlLeft:'L Ctrl',ControlRight:'R Ctrl',ArrowUp:'↑',ArrowDown:'↓',ArrowLeft:'←',ArrowRight:'→',Enter:'Enter',Tab:'Tab'}[c]||c.replace(/^Key|^Digit/,'').replace('Numpad','Num ');
 const PADN=['A','B','X','Y','LB','RB','LT','RT','Select','Start','L3','R3','↑','↓','←','→'];
 const bind={row:0,col:0,wait:false,pv:null,combo:[]},padUsed=[0,1,2,3].map(()=>new Set()),padT=[0,1,2,3].map(()=>[]),padPB=[0,1,2,3].map(()=>[]);
 const padName=n=>(isPS()?PADNS:PADN)[n]||('Button '+n),PADNS=['✕','○','□','△','L1','R1','L2','R2','Share','Options','L3','R3','↑','↓','←','→'],isPS=()=>{try{return pads().some(g=>g&&/054c|sony|playstation|dualshock|dualsense|wireless controller/i.test(g.id))}catch(e){return false}};
@@ -197,7 +197,7 @@ function tDraw(){if(!TCH.on)return;const u=tU(),me=P.find(p=>!p.cpu);ctx.save();
 
 // ================= État =================
 let mode='menu',P=[],B=[],FX=[],TX=[],RINGS=[],LOG=[],KOFX=[],WAVES=[],LINES=[],invF=0,hitstop=0,shake=0,slow=0,zk=0,flashS=0,SCv=1,frame=0,item=null,itemT=0,debug=false,paused=false,winner=-1,winT=0;
-const cams=[0,1,2,3,4,5,6,7].map(()=>({x:0,y:0}));
+const cams=Array.from({length:32},()=>({x:0,y:0}));
 const pname=p=>{if(typeof NET!=='undefined'&&NET&&NETNAMES&&NETNAMES[p.id])return NETNAMES[p.id];const f=!p.cpu&&profOf(p.id);return f?f.n:(p.cpu?'CPU ':'P')+(p.id+1)}; // nom du profil si assigné
 function tgt(p){ // cible = adversaire vivant le plus proche (on garde l'ancienne si elle reste proche)
  let best=null,bd=1e9;for(const q of P)if(q!==p&&q.stocks>0&&q.state!=='dead'&&!ally(p,q)){const d=Math.hypot(q.x-p.x,q.y-p.y);if(q.fx.invis>0&&d>100)continue;if(d<bd){bd=d;best=q}}
@@ -223,7 +223,7 @@ const flash=(a,c='#fff')=>{flashS=Math.max(flashS,a);flashCol=c};
 const unlock=()=>{if(AC&&AC.state!=='running')AC.resume()};
 addEventListener('touchstart',unlock);
 // ================= Menus (clavier, souris, manette) =================
-let nP=2,nH=1,cpuLv=5,maxC=1,CARDS=[],TEAMS=false,NERV=10;const TEAMA=[0,1,0,1,0,1,0,1],TCOL=['#ff4a4a','#4a8aff','#ffd23a','#5cff8a'],TNAME=['RED','BLUE','YELLOW','GREEN'];
+let nP=2,nH=1,cpuLv=5,maxC=1,CARDS=[],TEAMS=false,NERV=10;const TEAMA=Array.from({length:32},(_,i)=>i%2),TCOL=['#ff4a4a','#4a8aff','#ffd23a','#5cff8a'],TNAME=['RED','BLUE','YELLOW','GREEN'];
 const teamTxt=n=>{if(!TEAMS)return 'OFF (free for all)';const g={};for(let i=0;i<n;i++)(g[TEAMA[i]]=g[TEAMA[i]]||[]).push('P'+(i+1));const v=Object.values(g);return v.length<2?'ON - all in the same team! (= free for all)':v.map(x=>x.join('+')).join(' vs ')};
 const TEAMM=()=>[{t:()=>'Teams: '+(TEAMS?'ON':'OFF')+'  ◀ ▶',lr:()=>{TEAMS=!TEAMS;saveOpts()}}].concat([0,1,2,3,4,5,6,7].filter(i=>i<Math.max(2,nP)).map(i=>({t:()=>'P'+(i+1)+' team: '+TNAME[TEAMA[i]]+'  ◀ ▶',lr:d=>{TEAMA[i]=(TEAMA[i]+d+4)%4;TEAMS=true;saveOpts()}})),[{t:()=>'Preset 2 teams of 4 (8 players)',f:()=>{TEAMA.splice(0,8,0,1,0,1,0,1,0,1);TEAMS=true;saveOpts()}},{t:()=>'Preset 4 teams of 2 (8 players)',f:()=>{TEAMA.splice(0,8,0,0,1,1,2,2,3,3);TEAMS=true;saveOpts()}},{t:()=>'Preset 2v2: P1+P3 vs P2+P4',f:()=>{TEAMA.splice(0,4,0,1,0,1);TEAMS=true;saveOpts()}},{t:()=>'Preset 2v2: P1+P2 vs P3+P4',f:()=>{TEAMA.splice(0,4,0,0,1,1);TEAMS=true;saveOpts()}},{t:()=>'Preset 1v3: P1 vs everyone',f:()=>{TEAMA.splice(0,4,0,1,1,1);TEAMS=true;saveOpts()}},{t:()=>'Preset 1v2: P1 vs P2+P3',f:()=>{TEAMA.splice(0,4,0,1,1,2);TEAMS=true;saveOpts()}}]);const STOCKS=Array.from({length:99},(_,i)=>i+1);
 const kP=()=>.6+.04*NERV,kB=()=>.5+.05*NERV,kS=()=>.6+.04*NERV,kV=()=>(.35+.065*NERV)*ACC.shk; // tempo : 0 = calme, 10 = nerveux
@@ -295,8 +295,10 @@ function padEv(k){
 const hotAt=(x,y)=>hot.find(r=>x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h);
 const MOUSE={x:0,y:0,b:{},t:-1e9},MVIEW={};let MOUSEON=false;try{MOUSEON=localStorage.getItem('sf_mouse')==='1'}catch(e){} // souris en jeu : désactivée par défaut (option) // souris : le curseur vise · gauche = mêlée · droite = gros danmaku · milieu = parry
 addEventListener('mousemove',e=>{MOUSE.x=e.clientX;MOUSE.y=e.clientY;if(mode==='game'&&!paused)MOUSE.t=performance.now();const h=hotAt(e.clientX,e.clientY);if(h)h.hover()});
-addEventListener('mousedown',e=>{unlock();MOUSE.x=e.clientX;MOUSE.y=e.clientY;if(MOUSEON&&mode==='game'&&!paused&&!(TEST&&TEST.train&&paused)){MOUSE.b[e.button]=1;MOUSE.t=performance.now();if(!hotAt(e.clientX,e.clientY))return}if(mode==='binds'&&bind.wait)return;const h=hotAt(e.clientX,e.clientY);if(h){h.hover();h.click(e.clientX,e.clientY)}});
-addEventListener('mouseup',e=>{MOUSE.b[e.button]=0});addEventListener('contextmenu',e=>{if(mode==='game')e.preventDefault()});
+addEventListener('mousedown',e=>{unlock();if(mode==='binds'&&bind.wait&&bind.col<2){KB[bind.col][ACTS[bind.row]]='Mouse'+e.button;bind.wait=false;saveBinds();sfx('ok00');return}if(mode==='game')keys.add('Mouse'+e.button);MOUSE.x=e.clientX;MOUSE.y=e.clientY;if(MOUSEON&&mode==='game'&&!paused&&!(TEST&&TEST.train&&paused)){MOUSE.b[e.button]=1;MOUSE.t=performance.now();if(!hotAt(e.clientX,e.clientY))return}if(mode==='binds'&&bind.wait)return;const h=hotAt(e.clientX,e.clientY);if(h){h.hover();h.click(e.clientX,e.clientY)}});
+addEventListener('mouseup',e=>{MOUSE.b[e.button]=0;keys.delete('Mouse'+e.button)});
+addEventListener('wheel',e=>{const c=e.deltaY<0?'WheelUp':'WheelDown';if(mode==='binds'&&bind.wait&&bind.col<2){KB[bind.col][ACTS[bind.row]]=c;bind.wait=false;saveBinds();sfx('ok00');return}if(mode==='game')tapQ.add(c)},{passive:true});
+addEventListener('contextmenu',e=>{if(mode==='game')e.preventDefault()});addEventListener('contextmenu',e=>{if(mode==='game')e.preventDefault()});
 function mkP(id,x,y){return{id,x,y,vx:0,vy:0,hp:T.HP,stocks:STOCKS[stI],blade:0,bA:0,bCD:[],rifle:0,bombs:0,ult:0,ultS:false,rsrc:null,spirit:0,boost:T.DASH_CHARGES,dashCd:0,slide:0,shotT:0,power:1,graze:0,run:false,pStart:-99,pChain:0,pLast:-999,gStreak:0,gLast:-99,spReady:0,kicked:false,noSteer:0,carry:0,pips:T.PIPS,edgeOut:0,
  state:'idle',t:0,mv:null,mvName:'',hitDone:false,charge:0,charging:false,atkA:0,combo:0,comboN:0,comboT:0,inv:60,techBuf:0,
  shotCd:0,focus:false,kbx:0,kby:0,diPend:false,koPend:false,buff:null,buffT:0,flash:0,aim:0,cpu:false,prev:{},
@@ -1979,7 +1981,7 @@ function drawTags(VL,VR){const k=1/SCv,now=performance.now()/1000;
   const f=!q.cpu&&profOf(q.id);let al=1,sx=1,dy=0;
   if(dead){const u=Math.min(1,(now-(q.dRT||0)/1000)/1.3),e=u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;sx=Math.cos(e*TAU*2);dy=-24*e;al=1-(q.stocks>0?.45:.7)*e} // mort : spin fluide du nom
   if(q.fx&&q.fx.koishi>0)al*=.3;ctx.globalAlpha=al;
-  drawName(CX.anon>0?'???':(ACC.cb?CBS[q.id]+' ':'')+pname(q),0,-R-18+dy,f?ncol(f.c,COLS[q.id]):COLS[q.id],f?f.a:0,now+q.id,sx);
+  drawName(CX.anon>0?'???':(ACC.cb?CBS[q.id%8]+' ':'')+pname(q),0,-R-18+dy,f?ncol(f.c,COLS[q.id]):COLS[q.id],f?f.a:0,now+q.id,sx);
   if(!dead&&q.state!=='eaten')miniHUD(q,R,(VL-x)*SCv,(VR-x)*SCv);ctx.restore()}ctx.globalAlpha=1}
 function miniHUD(q,R,el,er){const hide=CX.anon>0||q.fx&&q.fx.koishi>0,flip=q.y>T.MAP_H-150/SCv,w=116,x=clamp(0,el+64,er-64)-w/2,y=flip?-R-84:R+10; // près du bas : HUD au-dessus du nom
  if(!hide){ctx.globalAlpha=.6;ctx.fillStyle='rgba(4,5,11,.4)';ctx.fillRect(x-4,y-4,w+8,47);ctx.strokeStyle=COLS[q.id];ctx.lineWidth=1.5;ctx.strokeRect(x-4,y-4,w+8,47);
@@ -3113,7 +3115,7 @@ const medR=a=>{const b=a.slice().sort((x,y)=>x-y);return b.length?b[b.length>>1]
 // ---- hôte
 async function onlHost(){if(!ONL)return;ONL.st='lobby';ONL.id=0;ONL.code=onlCode();onlLog('Creating room...');const p=await onlPeer('shmupf-'+ONL.code);if(!ONL)return p&&p.destroy();if(!p){ONL.st='idle';return}ONL.peer=p;
  onlLog('Room '+ONL.code+' ready: give this code to your friends (up to 3).');try{navigator.clipboard&&navigator.clipboard.writeText(ONL.code).catch(()=>{})}catch(e){}
- p.on('connection',c=>{if(c.label==='r'){c.on('open',()=>{const k=ONL&&ONL.cl.find(q=>q.id===(c.metadata&&c.metadata.rid));if(k)k.r=c});c.on('data',m=>{if(m&&m.t==='mpok'&&ONL){const k=ONL.cl.find(q=>q.r===c);if(k){k.mpok=1;k.mh=k.mhp}}});return}if(!ONL||ONL.st!=='lobby'||ONL.cl.length>=7){c.on('open',()=>{try{c.send({t:'full'})}catch(e){}setTimeout(()=>c.close(),300)});return}onlHostConn(c)});
+ p.on('connection',c=>{if(c.label==='r'){c.on('open',()=>{const k=ONL&&ONL.cl.find(q=>q.id===(c.metadata&&c.metadata.rid));if(k)k.r=c});c.on('data',m=>{if(m&&m.t==='mpok'&&ONL){const k=ONL.cl.find(q=>q.r===c);if(k){k.mpok=1;k.mh=k.mhp}}});return}if(!ONL||ONL.st!=='lobby'||ONL.cl.length>=31){c.on('open',()=>{try{c.send({t:'full'})}catch(e){}setTimeout(()=>c.close(),300)});return}onlHostConn(c)});
  ONL.piv=setInterval(()=>{if(!ONL){return}const now=performance.now();for(const k of ONL.cl)if(k.c.open)try{k.c.send({t:'p0',s:now})}catch(e){}if(!ONL.lt||now-ONL.lt>900){ONL.lt=now;onlBcast({t:'lobby',L:[[0,nickOf(),0]].concat(ONL.cl.filter(k=>k.ok).map(k=>[k.id,k.nick||'',k.rtt|0]))})}},300)}
 function onlHostConn(c){const used=new Set(ONL.cl.map(k=>k.id));let id=1;while(used.has(id))id++;const k={c,id,ping:[],ok:false};ONL.cl.push(k);
  c.on('open',()=>{k.ok=true;try{c.send({t:'hello',id,v:NETV})}catch(e){}onlLog('P'+(id+1)+' joined.');sfx('joined',.7)});
@@ -3154,7 +3156,7 @@ async function onlJoin2(c){if(!ONL)return;ONL.st='join';ONL.code=c;onlLog('Conne
  const p=await onlPeer();if(!ONL)return p&&p.destroy();if(!p){ONL.st='idle';return}ONL.peer=p;const cn=p.connect('shmupf-'+c,{reliable:false,serialization:'json'});ONL.conn=cn;
  const ping=[];cn.on('open',()=>{onlLog('Connected, waiting for the host...');try{cn.send({t:'nick',n:nickOf()});cn.send({t:'ch',c:myCh()})}catch(e){}});
  cn.on('data',m=>{if(!m||!m.t||!ONL)return;if(m.t==='p0'){try{cn.send({t:'q0',s:m.s})}catch(e){}return}if(m.t==='q0'){ping.push(performance.now()-m.s);if(ping.length>12)ping.shift();ONL.rtt=medR(ping);return}
-  if(m.t==='full'){onlLog('Room is full (8 players max).');ONL.st='idle';return}
+  if(m.t==='full'){onlLog('Room is full (32 players max online).');ONL.st='idle';return}
   if(m.t==='B'){if(NET)for(const x of m.a)netRecv(x);return}
   if(m.t==='hello'){ONL.id=m.id;ONL.st='lobbyc';try{const r=ONL.peer.connect('shmupf-'+ONL.code,{reliable:true,serialization:'json',label:'r',metadata:{rid:m.id}});ONL.rc=r;const parts=[];r.on('data',x=>{if(!x||x.t!=='mp'||!ONL)return;parts[x.i]=x.d;ONL.xfer={p:parts.filter(Boolean).length/x.n};if(parts.filter(v=>v!==undefined).length===x.n){const t=parts.join('');parts.length=0;ONL.xfer=null;let M;try{M=mapUnpack(JSON.parse(t),true)}catch(e){errRep('map receive',e);return}
     const ok=()=>{NETMAP=M;try{r.send({t:'mpok'})}catch(e){}onlLog('Map "'+M.name+'" received. Waiting for the host...')};if(M.js&&M.js.trim()){txtInput('THIS MAP RUNS CUSTOM CODE. TYPE YES TO ALLOW','',3,v=>{if(v&&v.toUpperCase()==='YES')ok();else{try{ONL.conn.send({t:'mpref'})}catch(e){}onlLog('You refused the map code.')}},{up:true,hint:'only accept maps from people you trust'})}else ok()}})}catch(e){}if(m.v!==NETV){onlLog('Different game versions: everyone must use the SAME file.');try{cn.send({t:'bye',why:'version'})}catch(e){}ONL.st='idle';return}onlLog('You are P'+(m.id+1)+'. Waiting for the host to start...');sfx('joined',.7);return}
@@ -3173,7 +3175,7 @@ function onlGo(m){const o=m.o,id=m.id;if(o.v!==NETV){onlLog('Different game vers
  big('ONLINE: YOU ARE P'+(id+1),COLS[id],40);sfx('ok00')}
 {const N0=nav;nav=ev=>{if(mode!=='online')return N0(ev);const L=onlItems();if(ev==='up'){ONL.sel=(ONL.sel+L.length-1)%L.length;sfx('se_select00',.6)}else if(ev==='down'){ONL.sel=(ONL.sel+1)%L.length;sfx('se_select00',.6)}else if(ev==='ok'){const it=L[ONL.sel];if(it&&it.f)it.f();sfx('ok00')}else if(ev==='back'){onlClose();mode='menu'}}}
 function onlItems(){const s=ONL.st;if(s==='idle')return[{t:'HOST A MATCH',f:onlHost},{t:'JOIN WITH A CODE',f:onlJoin},{t:'YOUR NAME: '+nickOf()+'  (Enter: edit)',f:()=>txtInput('YOUR NAME (seen by everyone)',nickOf(),12,v=>{if(v){NICK=v;try{localStorage.setItem('sf_nick',v)}catch(e){}}})},{t:'FULL SCREEN: '+(document.fullscreenElement?'ON':'OFF  (Enter)'),f:goFull},chRow(),{t:'PROFILE PICTURE: '+(MYPIC?'SET (Enter: change)':'NONE (Enter: choose, 1 MB max)'),f:picPick},{t:'BACK',f:()=>{onlClose();mode='menu'}}];
- if(s==='lobby')return[{t:ONL.cl.some(k=>k.ok)?'START THE MATCH ('+(ONL.cl.filter(k=>k.ok).length+1)+' players)':'(waiting for friends...)',f:onlStart},{t:'TEAMS: '+teamTxt(Math.min(8,ONL.cl.length+1))+'  (Enter: next)',f:()=>onlNextTeams(Math.min(8,ONL.cl.length+1))},chRow(),{t:'CANCEL',f:()=>{onlClose();onlOpen()}}];
+ if(s==='lobby')return[{t:ONL.cl.some(k=>k.ok)?'START THE MATCH ('+(ONL.cl.filter(k=>k.ok).length+1)+' players)':'(waiting for friends...)',f:onlStart},...(ONL.cl.filter(k=>k.ok).length+1>12?[{t:'⚠ MORE THAN 12 PLAYERS: AVERAGE PCs MAY LAG',f:()=>{}}]:[]),{t:'TEAMS: '+teamTxt(Math.min(32,ONL.cl.length+1))+'  (Enter: next)',f:()=>onlNextTeams(Math.min(32,ONL.cl.length+1))},chRow(),{t:'CANCEL',f:()=>{onlClose();onlOpen()}}];
  return[chRow(),{t:'CANCEL',f:()=>{onlClose();onlOpen()}}]}
 function teamParts(n){const out=[];const rec=(a,m)=>{if(a.length===n){if(m>1)out.push(a.slice());return}for(let t=0;t<=m&&t<4;t++){a.push(t);rec(a,Math.max(m,t+1));a.pop()}};rec([],0);return out}
 function onlNextTeams(n){if(n<3){TEAMS=false;return}const L=teamParts(n),cur=TEAMS?TEAMA.slice(0,n).join():'';let i=L.findIndex(p=>p.join()===cur);i=(i+1)%L.length;const p=L[i];p.forEach((t,j)=>TEAMA[j]=t);TEAMS=new Set(p).size<n;saveOpts()}
@@ -3450,7 +3452,8 @@ function loop(now){
  if(acc>STEP)acc=STEP;
  try{render()}catch(e){errRep('render',e);try{ctx=CTX0;ctx.restore();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}catch(x){}}errDraw();requestAnimationFrame(loop)}
 const ERRS=[];let errV=0;function errRep(w,e){const st=((e&&e.stack)||'').split('\n').slice(1,5).map(l=>l.trim().replace(/^at /,'').replace(/\(?(file|https?):[^)]*\/([^/:]+):(\d+):(\d+)\)?/,'@$3:$4')).join(' < '),m=w+' · '+((e&&e.message)||e)+' · '+st;const o=ERRS.find(x=>x.m===m);if(o){o.n++;return}
- ERRS.push({m,n:1,f:frame,mode,t:new Date().toISOString().slice(11,19),ctx:mode==='game'?{nP,map:mapI,items:itemsOn,cx:Object.keys(CX).join(','),it:item&&item.k,B:B.length,ent:ENT.map(e=>e.k).slice(0,8).join(','),st:P.map(p=>p.state+':'+(p.hp|0)).join(' ')}:null});if(ERRS.length>12)ERRS.shift();errV=600;try{console.error('[SF BUG]',m,e)}catch(x){}try{localStorage.setItem('sf_err',JSON.stringify(ERRS))}catch(x){}}
+ ERRS.push({m,n:1,f:frame,mode,t:new Date().toISOString().slice(11,19),ctx:mode==='game'?{nP,map:mapI,items:itemsOn,cx:Object.keys(CX).join(','),it:item&&item.k,B:B.length,ent:ENT.map(e=>e.k).slice(0,8).join(','),st:P.map(p=>p.state+':'+(p.hp|0)).join(' ')}:null});if(ERRS.length>12)ERRS.shift();errV=600;try{console.error('[SF BUG]',m,e)}catch(x){}try{localStorage.setItem('sf_err',JSON.stringify(ERRS))}catch(x){}if(ERRDL&&performance.now()-(errDT||-1e9)>10000){errDT=performance.now();try{const b=new Blob([JSON.stringify({ver:typeof NETV!=='undefined'?NETV:'',ua:navigator.userAgent,net:NET?{n:NET.n,f:NET.f,rtt:NET.rtt|0,desync:NET.desync}:null,errs:ERRS},null,1)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='shmup-fighter-error-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';document.body.appendChild(a);a.click();a.remove()}catch(x){}}}
+let ERRDL=0,errDT=0;try{ERRDL=+localStorage.getItem('sf_errdl')||0}catch(e){}
 function errDraw(){if(!ERRS.length||errV<=0)return;errV--;const c=OC||CTX0;c.save();c.setTransform(1,0,0,1,0,0);c.globalAlpha=Math.min(1,errV/60);c.globalCompositeOperation='source-over';c.font='11px monospace';c.textAlign='left';const L=ERRS.slice(-3);c.fillStyle='rgba(60,0,0,.85)';c.fillRect(0,0,W,14+L.length*14);c.fillStyle='#ff8a8a';c.fillText('BUG caught (game keeps running) · F9 = copy report · '+ERRS.length+' kind(s)',6,11);L.forEach((x,i)=>c.fillText(('x'+x.n+' ').padEnd(5)+x.m.slice(0,170),6,25+i*14));c.restore()}
 addEventListener('error',e=>errRep('global',e.error||e.message));addEventListener('unhandledrejection',e=>errRep('promise',e.reason));
 let F9T=0;function bugReport(){const N=typeof NET!=='undefined'&&NET?{rtt:NET.rtt|0,D:NET.D,f:NET.f,conf:NET.conf,rbN:NET.rbN,rbMax:NET.rbMax,desync:NET.desync,miss:NET.miss||0,stall:NET.stall}:null;return JSON.stringify({ver:typeof NETV!=='undefined'?NETV:'',ua:navigator.userAgent,gl:!!GLR,fps,mode,frame,map:mapI,nP,net:N,errs:ERRS},null,1)}
@@ -3486,7 +3489,7 @@ function render(){musTick();if(OC)OC.clearRect(0,0,W,H);if(GLR){GLR.begin();if(m
  screenFilter();
  for(const q of P)if(q.state==='spell')drawSpellUI(q);
  chScreen();drawTest();
- {const hk=(TCH.on?Math.min(.8,H/720):Math.min(1,W/1280+.1))*ACC.ui;ctx.save();ctx.globalAlpha=.85;ctx.scale(hk,hk);if(P.length>4){const k8=Math.min(hk,W/(4*282));ctx.scale(k8/hk,k8/hk);P.forEach((p,i)=>drawHUD(p,(12+(i%4)*W/4)/k8,false,(i<4?30:H-100)/k8))}else P.forEach((p,i)=>drawHUD(p,(i%2?W-12:12)/hk,i%2===1,(i<2?30:H-100)/hk));ctx.restore()} // HUD des bords (en plus de celui sous les joueurs)
+ {const hk=(TCH.on?Math.min(.8,H/720):Math.min(1,W/1280+.1))*ACC.ui;ctx.save();ctx.globalAlpha=.85;ctx.scale(hk,hk);if(P.length>8){}else if(P.length>4){const k8=Math.min(hk,W/(4*282));ctx.scale(k8/hk,k8/hk);P.forEach((p,i)=>drawHUD(p,(12+(i%4)*W/4)/k8,false,(i<4?30:H-100)/k8))}else P.forEach((p,i)=>drawHUD(p,(i%2?W-12:12)/hk,i%2===1,(i<2?30:H-100)/hk));ctx.restore()} // HUD des bords (en plus de celui sous les joueurs)
  drawTimer();drawActs();drawTut();
  drawTrain();
  ctx.textAlign='center';ctx.font='13px monospace';ctx.fillStyle='#f8f';
@@ -3780,7 +3783,10 @@ function drawInfo(){
  backBtn();ctx.font=(24*u|0)+'px monospace';ctx.fillStyle='#ffd23a';ctx.textAlign='left';ctx.fillText('◀ Prev',50*u,H-36*u);ctx.textAlign='right';ctx.fillText('Next ▶',W-50*u,H-36*u);
  hot.push({x:30*u,y:H-70*u,w:160*u,h:50*u,hover:()=>{},click:()=>nav('left')},{x:W-190*u,y:H-70*u,w:160*u,h:50*u,hover:()=>{},click:()=>nav('right')});
  ctx.textAlign='center';ctx.fillStyle='#888';ctx.font=(15*u|0)+'px monospace';ctx.fillText('Left/Right: page · Esc / B: back',W/2,H-36*u)}
-function drawBinds(){
+function drawBinds(){drawBinds0();const cw=Math.min(175,(W-210)/6),x0=210+cw/2,y0=96,rh=Math.min(27,(H-210)/ACTS.length),ps=pads();ctx.save();ctx.globalCompositeOperation='lighter';
+ ACTS.forEach((a,r)=>{const y=y0+28+r*rh;for(let j=0;j<6;j++){let on=false;if(j<2)on=a==='up'||a==='down'||a==='left'||a==='right'||BTN.includes(a)?kd(KB[j][a]):false;else{const g=ps[j-2];if(g){const o=padOn(g);on=[].concat(PAD[j-2][a]).every(n=>o.includes(n))}}if(on){ctx.fillStyle='rgba(90,255,120,.35)';ctx.fillRect(x0+cw*j-cw/2+4,y-rh*.7,cw-8,rh)}}});ctx.restore();
+ ctx.textAlign='center';ctx.font='12px monospace';ctx.fillStyle='#6f6';ctx.fillText('TEST: press any key or button, its row lights up green  ·  keyboard columns also accept mouse buttons and the wheel',W/2,H-128)}
+function drawBinds0(){
  hot=[];const cols=['P1 keys','P2 keys','Pad 1','Pad 2','Pad 3','Pad 4'],cw=Math.min(175,(W-210)/6),x0=210+cw/2,y0=96,rh=Math.min(27,(H-210)/ACTS.length);
  ctx.textAlign='center';ctx.fillStyle='#fff';uiHeader('CONTROLS');
  ctx.textAlign='left';ctx.font='16px monospace';ctx.fillStyle='#aaa';ctx.fillText('◀ Back',20,40);hot.push({x:10,y:15,w:120,h:36,hover:()=>{},click:()=>nav('back')});
@@ -3843,7 +3849,7 @@ const HUB=[
  {k:'opt',t:'OPTIONS',c:'#7fa8ff',d:'Sound, profiles, controls, effects.',f:()=>openSub('OPTIONS',OPTL)},
  {k:'help',t:'HOW TO PLAY',c:'#ff9a3a',d:'Tutorial and full guide.',f:()=>openSub('HOW TO PLAY',HELPL)}];
 const RULESL=()=>MENU.filter(r=>/^(Mode|Fighters|Humans|CPU level|Lives|Timer|Map:|Items:|Cards at once|Teams|Tempo)/.test(r.t()));
-const OPTL=()=>MENU.filter(r=>/^(Effects|Full screen|Motion|Screen shake|Interface size|Color-blind|Sound…|Records…|Profiles…|Controls)/.test(r.t())).concat([{t:()=>'Title screen',f:()=>{mode='title';UITITLE.t0=UNOW()}}]);
+const OPTL=()=>MENU.filter(r=>/^(Effects|Full screen|Motion|Screen shake|Interface size|Color-blind|Error report|Sound…|Records…|Profiles…|Controls)/.test(r.t())).concat([{t:()=>'Title screen',f:()=>{mode='title';UITITLE.t0=UNOW()}}]);
 const HELPL=()=>MENU.filter(r=>/^(How to play|Guide)/.test(r.t()));
 const RDESC={Mode:'CASUAL = your own rules. COMPETITIVE = 4 lives, 5 minutes, no items.',Fighters:'How many fighters are in the arena (2 to 8).',Humans:'How many of them are real players; the rest are CPUs.','CPU level':'9 = superhuman: perfect parries and reactions.',Lives:'Number of stocks per fighter.',Timer:'Match length in minutes (OFF = until the last one standing).',Map:'Arena. Custom maps from the Map maker appear here too.',Items:'Item cards that spawn during the match.','Cards at once':'Maximum item cards on the map at the same time.',Teams:'Enter to choose the team of each player.',Tempo:'How fast cards spawn and how frantic the match gets.',Effects:'REDUCED = fewer flashes and particles (photosensitive players).',Motion:'SMOOTH = fluid on 120/144 Hz screens (shows the last frame blended, about 8 ms later). STRICT 60 = raw frames. AUTO = smooth only on fast screens.','Sound…':'Volumes and custom music for each screen.','Profiles…':'Player names, colors and name animations.',Controls:'Keyboard / gamepad bindings.','How to play':'Interactive tutorial.',Guide:'Every mechanic explained.','Title screen':'Back to the title screen.'};
 // placement : grande carte à gauche, deux cartes à droite, ruban de petites cartes en bas
@@ -4792,6 +4798,10 @@ function picPick(){const f=document.createElement('input');f.type='file';f.accep
 function nickEdit(){txtInput('YOUR NAME (seen by everyone)',nickOf(),12,v=>{if(v){NICK=v;try{localStorage.setItem('sf_nick',v)}catch(e){}if(ONL&&ONL.conn&&ONL.conn.open)try{ONL.conn.send({t:'nick',n:v})}catch(e){}if(NET&&NETNAMES){NETNAMES[NET.L]=v}}})}
 {const R0=render;render=(...a)=>{if(BRET&&mode!=='binds'&&mode!=='sub'){if(NET)mode='game';BRET=0}return R0(...a)}}
 setInterval(()=>{if(!NET||!ONL||mode==='game')return;try{if(ONL.id===0)onlBcast({t:'hb'});else if(ONL.conn&&ONL.conn.open)ONL.conn.send({t:'hb'})}catch(e){}},1000); // signe de vie hors partie (menus) : personne n'est retiré
+
+// 9 à 32 joueurs (en ligne) : couleurs générées
+for(let i=8;i<32;i++){const hu=(i*137.5)%360;COLS.push(`hsl(${hu|0},85%,62%)`);LCOLS.push(`hsl(${hu|0},90%,82%)`)}
+{const i=MENU.findIndex(r=>/^Effects/.test(r.t()));if(i>=0)MENU.splice(i+1,0,{t:()=>'Error report file: '+(ERRDL?'ON (downloads a .json when a bug happens)':'OFF')+'  ◀ ▶',lr:()=>{ERRDL=ERRDL?0:1;try{localStorage.setItem('sf_errdl',ERRDL)}catch(e){}},f:()=>{ERRDL=ERRDL?0:1;try{localStorage.setItem('sf_errdl',ERRDL)}catch(e){}}})}
 // ---- porte audio : le navigateur bloque le son tant qu'il n'y a ni clic ni touche (la manette ne compte pas) → écran clair « clique pour jouer »
 let AGT=0,AGN=0;for(const e of['pointerdown','mousedown','keydown','touchstart'])addEventListener(e,()=>{AGT=performance.now()},true);
 const aLock=()=>AC&&AC.state!=='running';
