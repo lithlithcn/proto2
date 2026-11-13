@@ -1945,7 +1945,7 @@ function applyBinds(){const cp=o=>JSON.parse(JSON.stringify(o));KB=cp(DEFB.KB);P
 saveBinds=()=>{const cp=o=>JSON.parse(JSON.stringify(o));for(let i=0;i<4;i++){const f=profOf(i);if(f){if(KB[i])f.kb=cp(KB[i]);f.pad=cp(PAD[i])}else{if(KB[i])DEFB.KB[i]=cp(KB[i]);DEFB.PAD[i]=cp(PAD[i])}}try{localStorage.setItem('sf_binds3',JSON.stringify(DEFB))}catch(e){}saveProf()};
 applyBinds();
 const askName=d=>{const n=((typeof prompt==='function'?prompt('Name (12 characters max)',d):d)||'').trim().slice(0,12);return n||null};
-const SOUNDM=()=>[{t:()=>'YouTube player: '+(window.YTP&&!YTP.Y.gone?'ON':'OFF')+'  ◀ ▶',lr:()=>YTP.gone(YTP.Y.gone?0:1),f:()=>YTP.gone(YTP.Y.gone?0:1)}].concat([['Master volume','master'],['Sound effects','sfx'],['Music','music']].map(([n,k])=>({t:()=>n+': '+Math.round(VOLS[k]*100)+'%  ◀ ▶',lr:d=>{VOLS[k]=clamp(Math.round(VOLS[k]*10+d)/10,0,1);saveVol()}})).concat(MSCRS.map(([k,n])=>({t:()=>'Music · '+n+': '+MUS.filter(t=>t.scr===k).length+' track(s)…',f:()=>openSub('MUSIC · '+n.toUpperCase(),()=>musRows(k))}))));
+const SOUNDM=()=>[['Master volume','master'],['Sound effects','sfx'],['Music','music']].map(([n,k])=>({t:()=>n+': '+Math.round(VOLS[k]*100)+'%  ◀ ▶',lr:d=>{VOLS[k]=clamp(Math.round(VOLS[k]*10+d)/10,0,1);saveVol()}})).concat(MSCRS.map(([k,n])=>({t:()=>'Music · '+n+': '+MUS.filter(t=>t.scr===k).length+' track(s)…',f:()=>openSub('MUSIC · '+n.toUpperCase(),()=>musRows(k))})));
 const PROFM=()=>{const r=[];for(let i=0;i<4;i++)r.push({t:()=>'P'+(i+1)+': '+(profOf(i)?profOf(i).n:'(no profile)')+'  ◀ ▶',lr:d=>{let v=SLOTP[i]+d;if(v<-1)v=PROF.length-1;if(v>=PROF.length)v=-1;SLOTP[i]=v;saveProf();applyBinds()}});
  r.push({t:()=>'+ New profile',f:()=>txtInput('NEW PROFILE NAME','P'+(PROF.length+1),12,n=>{if(n){PROF.push({n,c:0,a:1});profE=PROF.length-1;saveProf()}})});
  if(PROF.length){const g=()=>PROF[profE=clamp(profE,0,PROF.length-1)];
@@ -4848,10 +4848,10 @@ function drawCss(){cssTick();if(mode!=='css')return;const S=CS2.sl,N=CHL.length,
 {const i=HUB.findIndex(h=>h.k==='fight');if(i>=0)HUB[i].f=()=>TCH.on?cselOpen():cssOpen()}
 // ---- lecteur de playlist YouTube (colonne gauche, DOM par-dessus le canvas ; la musique interne continue en silence)
 var YTSB=0;
-{const WK='https://sort-maker.lithlithcn.workers.dev',DEFL='PL31qxkG14rW2Kq0y1DgIap6eIa2YNQFQa';
+{const WKS=['https://sort-maker.arietbatiment5.workers.dev','https://sort-maker.lithlithcn.workers.dev'],WK=WKS[0],DEFL='PL31qxkG14rW2Kq0y1DgIap6eIa2YNQFQa';
 const Y={on:1,list:DEFL,vid:'',shuf:0,rep:0,mini:0,v:[],c:0,view:0,ord:[],P:null,ready:0,st:-1,cv:0,res:null,busy:0,tip:0,act:0,bad:0,nodes:new Map,vol:-1,tsP:0,gest:0,lt:0,lid:''};
 try{Object.assign(Y,JSON.parse(localStorage.getItem('sf_yt')||'{}'))}catch(e){}
-Y.v=[];Y.nodes=new Map;Y.ord=[];Y.res=null;
+if(Y.gone)Y.on=Y.won===0?0:1;Y.gone=0;Y.v=[];Y.nodes=new Map;Y.ord=[];Y.res=null;
 const ySave=()=>{try{localStorage.setItem('sf_yt',JSON.stringify({gone:Y.gone,won:Y.won,on:Y.on,list:Y.list,vid:Y.vid,shuf:Y.shuf,rep:Y.rep,mini:Y.mini}))}catch(e){}};
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const thumb=id=>'https://i.ytimg.com/vi/'+id+'/mqdefault.jpg';
@@ -4985,7 +4985,7 @@ const R=document.createElement('div');R.id='yt';R.className='hide';
 R.innerHTML=`<div class="gl"></div><div class="sr">${ico.mag}<input placeholder="Playlist name or link" spellcheck="false"><button class="cl" title="Clear">${ico.x}</button></div><button class="go" title="Search">${ico.mag}</button>
 <div class="ls"><div class="vw"><div id="ytpl"></div></div><button class="ar up" title="Previous track">${ico.up}</button><button class="ar dn" title="Next track">${ico.up}</button><div class="tip"><div class="t"></div><div class="a"></div><div class="m"></div></div></div>
 <div class="rs"></div><div class="tst"></div>
-<div class="cb"><div class="pr"><span class="t0">0:00</span><div class="bar"><i></i></div><span class="t1">0:00</span></div><div class="bt"><button class="pw" title="YouTube music on / off (off = game music)">${ico.pow}</button><button class="ej" title="Remove the YouTube player (game music). Bring it back in Options › Sound">${ico.ej}</button><button class="sh" title="Shuffle">${ico.shuf}</button><button class="pv" title="Previous">${ico.prev}</button><button class="pp" title="Play / pause">${ico.pause}</button><button class="nx" title="Next">${ico.next}</button><button class="rp" title="Repeat one">${ico.rep}</button></div></div>
+<div class="cb"><div class="pr"><span class="t0">0:00</span><div class="bar"><i></i></div><span class="t1">0:00</span></div><div class="bt"><button class="pw" title="YouTube music on / off (off = game music)">${ico.pow}</button><button class="sh" title="Shuffle">${ico.shuf}</button><button class="pv" title="Previous">${ico.prev}</button><button class="pp" title="Play / pause">${ico.pause}</button><button class="nx" title="Next">${ico.next}</button><button class="rp" title="Repeat one">${ico.rep}</button></div></div>
 <button class="tb" title="Show / hide the playlist">${ico.tab}<span class="n">${ico.note('a')}</span></button>`;
 const N=document.createElement('div');N.id='ytnow';N.className='off';N.innerHTML=ico.note('b')+'<div class="eq"><i></i><i></i><i></i></div><div class="tx"><span></span></div>';
 document.body.appendChild(R);document.body.appendChild(N);
@@ -4999,7 +4999,7 @@ const kStop=e=>{if(document.activeElement!==INP)return;e.stopImmediatePropagatio
 addEventListener('keydown',kStop,true);addEventListener('keyup',kStop,true);
 const toast=(s,ms)=>{TST.textContent=s;TST.classList.toggle('on',!!s);clearTimeout(Y.tt);if(s&&ms)Y.tt=setTimeout(()=>TST.classList.remove('on'),ms)};
 // ---- données
-async function wkGet(path){const c=new AbortController,t=setTimeout(()=>c.abort(),15000);try{const r=await fetch(WK+path,{signal:c.signal});const j=await r.json().catch(()=>null);if(!j)throw new Error('http '+r.status);return j}finally{clearTimeout(t)}}
+async function wkGet(path){let err;for(const w of WKS){const c=new AbortController,t=setTimeout(()=>c.abort(),15000);try{const r=await fetch(w+path,{signal:c.signal});const j=await r.json().catch(()=>null);if(!j)throw new Error('http '+r.status);if(j.error==='not_found'&&w!==WKS[WKS.length-1])throw new Error('not_found');return j}catch(e){err=e;console.warn('[YT] worker',w,e.message)}finally{clearTimeout(t)}}throw err}
 const cacheK=l=>'sf_ytc_'+l;
 function setList(L,keep){if(keep&&L.length===Y.v.length&&L.every((v,i)=>v.id===Y.v[i].id)){L.forEach((v,i)=>{Object.assign(Y.v[i],v);const n=[...Y.nodes].find(([p])=>md(p)===i),d=n&&n[1].querySelector('.d');if(d&&v.duration){d.textContent='♪ '+v.duration;d.style.display=''}});yInfo();return}const prev=Y.v[Y.c];Y.v=L;let i=keep&&prev?L.findIndex(v=>v.id===prev.id):-1;if(i<0&&Y.vid)i=L.findIndex(v=>v.id===Y.vid);Y.c=Math.max(0,i);Y.cv=Y.c;Y.view=Y.c;mkOrd();for(const[k,n]of Y.nodes){n.remove()}Y.nodes.clear();yLay();yInfo()}
 function mkOrd(){const n=Y.v.length;Y.ord=[...Array(n).keys()];for(let i=n-1;i>0;i--){const j=Math.random()*(i+1)|0;[Y.ord[i],Y.ord[j]]=[Y.ord[j],Y.ord[i]]}}
@@ -5067,7 +5067,7 @@ UP.onclick=()=>yStep(-1,1);DN.onclick=()=>yStep(1,1);
 $('.pv').onclick=()=>yStep(-1,1);$('.nx').onclick=()=>yStep(1,1);
 $('.pp').onclick=()=>{if(!Y.ready)return;if(!Y.on){setOn(1);return}if(Y.st===1)Y.P.pauseVideo();else if(Y.st===5||Y.st===-1)yPlay(Y.c);else Y.P.playVideo()};
 $('.sh').onclick=()=>{Y.shuf^=1;if(Y.shuf)mkOrd();ySave();btns()};$('.rp').onclick=()=>{Y.rep^=1;ySave();btns()};
-$('.pw').onclick=()=>setOn(Y.on?0:1);$('.ej').onclick=()=>yGone(1);
+$('.pw').onclick=()=>setOn(Y.on?0:1);
 function yGone(g){Y.gone=g;ySave();if(g){Y.won=Y.on;setOn(0);toast('')}else setOn(Y.won===0?0:1)}
 $('.tb').onclick=()=>{if(mode==='menu'){Y.mini^=1;ySave()}else Y.pin=!Y.pin};
 $('.go').onclick=ySubmit;$('.cl').onclick=()=>{INP.value='';showRes(null);INP.focus()};
@@ -5084,7 +5084,7 @@ window.YTAPIq=()=>{Y.P=new YT.Player('ytpl',{width:'100%',height:'100%',playerVa
 const sc=document.createElement('script');sc.src='https://www.youtube.com/iframe_api';sc.onerror=()=>toast('YouTube is unreachable',5000);document.head.appendChild(sc);
 // ---- volume : même courbe que la musique interne, qui reste muette tant que YouTube joue
 {const M0=musTick;musTick=()=>{M0();if(!Y.on||!Y.ready||!Y.v.length||Y.bad>=Math.min(15,Y.v.length))return;if(MAUD)MAUD.volume=0;const kd=(performance.now()-KOMT)/1000,ke=kd<0?0:kd<.12?kd/.12:kd<1.1?1:kd<2.1?1-(kd-1.1):0,v=Math.round(clamp(VOLS.music*VOLS.master*ENDK*(1-.45*ke)*(1-.75*MDUCK),0,1)*100);
- if(v!==Y.vol){Y.vol=v;try{Y.P.setVolume(v)}catch(e){}}
+ if(v!==Y.vol){Y.vol=v;try{Y.P.setVolume(v)}catch(e){}}const pr=ke>.35?.75:1;if(pr!==Y.pr){Y.pr=pr;try{Y.P.setPlaybackRate(pr)}catch(e){}}
  if(mode==='game'&&TSTOP>0){if(Y.st===1){Y.tsP=1;try{Y.P.pauseVideo()}catch(e){}}}else if(Y.tsP){Y.tsP=0;try{Y.P.playVideo()}catch(e){}}}}
 // ---- placement selon l'écran
 let lw=0;const loop=()=>{requestAnimationFrame(loop);const m=mode,hub=m==='menu'&&!Y.gone,vis=!Y.gone&&(hub||m==='sub'||m==='items'||m==='info'||m==='online'||m==='css'||m==='csel'||m==='binds'),sbw=Math.round(clamp(innerWidth*.205,210,370));
