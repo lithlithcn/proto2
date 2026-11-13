@@ -559,7 +559,7 @@ const ITEMS=[
  {k:'hourai',ch:'Hourai Doll',name:'Cursed Link',c:'#e070a0',d:'8 s: all your foes are linked: damage to one hurts them ALL. Plus a voodoo doll: bullets that hit it hurt its victim x1.5.'},
  {k:'lily',ch:'Lily White',name:'Spring Is Here',c:'#ffd6f0',d:'8 s: EVERY bullet becomes a healing flower. Pure melee! Falling petals give small stat boosts.'},
  {k:'lunasa',ch:'Lunasa Prismriver',name:'Tempo Lento',c:'#6a6ad8',d:'6 s: time slows for everyone but you. Music notes (big bullets) make victims even more vulnerable.'},
- {k:'merlin',ch:'Merlin Prismriver',name:'Mania',c:'#e8e8ff',d:"5 s: the whole game runs at x2 speed and everyone else's controls are flipped. Music notes add vulnerability."},
+ {k:'merlin',ch:'Merlin Prismriver',name:'Mania',c:'#e8e8ff',d:"5 s: the whole game runs at x2 speed. Music notes add vulnerability."},
  {k:'lyrica',ch:'Lyrica Prismriver',name:'Phantom Sounds',c:'#ff6b6b',d:'7 s: a GIANT music staff covers the whole screen. Its notes hurt your foes and fire big danmaku at them; hit a note (melee) to burst it into big danmaku.'},
  {k:'layla',ch:'Layla Prismriver',name:'Final Concert',c:'#c8a0ff',d:'10 s: a rhythm game! Foes must press PARRY on every beat; each missed note hurts.'},
  {k:'youmu',ch:'Youmu Konpaku',name:'Half-Phantom Slash',c:'#9fe0c0',d:'10 s: your attack button becomes a forward flash slash (1.5 s cooldown), and Myon copies every slash a moment later.'},
@@ -652,7 +652,7 @@ const ITEMS=[
  {k:'zanmu',ch:'Zanmu Nippaku',name:'Nothingness',c:'#444',d:'10 s: random cells of the arena turn into VOID (warning first). Anyone standing on a void cell when it opens is ERASED.'},
  {k:'ubame',ch:'Ubame Chirizuka',name:'The Mountain Tilts',c:'#8a6a4a',d:'Everyone is teleported into their own colored zone for 7 s. The fighter who took the most damage sees their zone collapse: ONE SHOT. Ends early if someone dies.'},
  {k:'chimi',ch:'Chimi Houjuu',name:'Mountain Spirits',c:'#5a8a5a',d:'A giant mountain rises from the bottom (red column = warning): one-shot. Then water rains from the sky (pushes down) and rivers flow down its sides, carrying players away.'},
- {k:'nareko',ch:'Nareko Michigami',name:'One Way Only',c:'#e8c040',d:'10 s: a grid of arrows covers the ground. Foes can only move in the arrow direction of their cell, from cell to cell.'},
+ {k:'nareko',ch:'Nareko Michigami',name:'One Way Only',c:'#e8c040',d:'10 s: a maze of arrows covers the middle of the arena. Inside it, foes can only move along the arrows, and every arrow path leads out of the maze.'},
  {k:'yuiman',ch:'Yuiman Asama',name:"Serpent's Rebirth",c:'#ff5030',d:'10 s: a serpent coils around you and swallows foe danmaku, then spits them back at the nearest foe: bigger, faster, stronger.'},
  {k:'toyohime',ch:'Watatsuki no Toyohime',name:'Lunar Fan',c:'#e8e8ff',d:'One sweep of the fan erases every foe bullet and slams every foe away (and breaks a pip). Then the fan keeps waving for 5 s, blowing foes toward the red zone.'},
  {k:'ariya',ch:'Ariya Iwanaga',name:'Stone Gaze',c:'#b0a080',d:'7 s: foe shots that enter the circle around you turn to STONE. Hit a stone (melee) to launch it back (light damage), then it shatters into small shards.'},
@@ -1007,7 +1007,7 @@ function chPre(){
   if(p.cage){if(--p.cage.t<=0)p.cage=null;else{const dx=p.x-p.cage.x,dy=p.y-p.cage.y,d=Math.hypot(dx,dy);if(d>50){p.x=p.cage.x+dx/d*50;p.y=p.cage.y+dy/d*50;p.vx*=-.5;p.vy*=-.5}}}
   if(f.eat>0&&f.eat%50===0&&B.length<T.MAX_B){const q=nearFoe(p.id,p.x,p.y),a=q?Math.atan2(q.y-p.y,q.x-p.x):p.aim;B.push({x:p.x,y:p.y,vx:Math.cos(a)*2.6,vy:Math.sin(a)*2.6,r:24,owner:p.id,heavy:1,m:IM.dark,mult:1,dist:999,life:300,dead:0,seen:0,home:.01,gr:0,dark:1,c:'#1a0f2e'})}
   if(f.spin>0)xSpinRam(p);
-  if(f.ran>0&&frame%24===0)for(let i=0;i<3;i++)hb(p.x,p.y,frame*.13+i*TAU/3,3.4,p.id,'#f2c14e');
+  if(f.ran>0&&frame%9===0)for(let i=0;i<3;i++)hb(p.x,p.y,frame*.13+i*TAU/3,3.4,p.id,'#f2c14e');
   if(f.four>0&&p.state==='atk'&&p.mv&&!p.mv.spd){const m=p.mv;if(p.t>m.start&&p.t<=m.start+m.act)for(const c of xFour(p))for(const q of al){if(q===p||q.inv>0||(q.fCD||0)>frame)continue;
    if(Math.hypot(q.x-c[0],q.y-c[1])<(m.range||40)+bodyR(q)+10){q.fCD=frame+20;hit(q,p,q.x-c[0],q.y-c[1],m,1,false)}}}
   if(f.winter>0){for(const q of al)if(q!==p&&!(q.frozen>0)&&(q.frzImm||0)<frame){if(Math.hypot(q.vx,q.vy)<.6&&q.state==='idle'){if((q.still=(q.still||0)+1)>=60)xFreeze(q)}else q.still=0}
@@ -1164,7 +1164,7 @@ Object.assign(GIVE,{
   ENT.push({k:'web',o:p.id,t:600,x1:clamp(cx-Math.cos(a)*300,0,T.MAP_W),y1:clamp(cy-Math.sin(a)*300,0,T.MAP_H),x2:clamp(cx+Math.cos(a)*300,0,T.MAP_W),y2:clamp(cy+Math.sin(a)*300,0,T.MAP_H)})}big('SPIDER WEBS','#e8e8c0',44)},
  parsee:p=>{p.fx.jeal=600;big('GREEN-EYED JEALOUSY','#5cff7a',44)},
  yuugi:p=>{p.fx.oni=600;big('ATTACK = ONI THROW','#e04a4a',44)},
- satori:p=>{CX.sat={o:p.id,t:480};big('I READ YOUR MIND','#ff8fd0',44);const q=P.filter(q=>q!==p&&q.lastIt&&!['satori','rainbow'].includes(q.lastIt)).sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];if(q)give(p,q.lastIt)},
+ satori:p=>{CX.sat={o:p.id,t:480};big('I READ YOUR MIND: YOUR SHOTS AIM WHERE THEY WILL BE','#ff8fd0',36);const q=P.filter(q=>q!==p&&q.lastIt&&!['satori','rainbow'].includes(q.lastIt)).sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];if(q)give(p,q.lastIt)},
  orin:p=>{CX.hell={o:p.id,t:600,w:0};big('FIRES OF HELL','#ff5030',50);sfx('catorin')},
  okuu:p=>{const r=xR();CX.sun={o:p.id,t:600,x:(r[0]+r[2])/2,y:(r[1]+r[3])/2,r:30};big('NUCLEAR FUSION','#ffa63a',54);sfx('se_cat00')},
  koishi:p=>{p.fx.koishi=480;p.fx.invis=480;big('…','#7fe0a0',60)},
@@ -1214,7 +1214,7 @@ function xFantasy(p){p.fh=300;p.inv=10;big('FANTASY SKY','#fff',90);flash(.7,'#f
  if(CX.flood&&CX.flood.o===p.id){if((p.anCD||0)<frame){p.anCD=frame+90;xBall(p,p.x,p.y,p.aim,12,14,IM.rocket,{anchor:1,life:80,c:'#334'});sfx('tan00')}return 1}
  return HI(p,o)}}
 {const I0=chInput;chInput=(p,I)=>{I=I0(p,I);
- if(CX.sat&&p.id!==CX.sat.o){(p.ibuf||(p.ibuf=[])).push(I);I=p.ibuf.length>24?p.ibuf.shift():{x:0,y:0,b:{}}}else if(p.ibuf)p.ibuf=null; // Satori : commandes en retard
+ if(p.ibuf)p.ibuf=null;
  if(p.ban){if(--p.ban.t<=0)p.ban=null;else if(I.b[p.ban.k])I={x:I.x,y:I.y,b:{...I.b,[p.ban.k]:false}}} // Nue : attaque non identifiable
  return I}}
 {const S0=chSpeed;chSpeed=p=>{let k=S0(p);if(p.fx.mech>0)k*=.75;if(p.fx.under>0)k*=1.3;if(CX.rain&&p.id!==CX.rain.o)k*=.8;if(CX.flood&&p.id!==CX.flood.o&&p.y>CX.flood.lvl)k*=.6;return k}}
@@ -1371,7 +1371,7 @@ Object.assign(GIVE,{
  nemuno:p=>{ENT.push({k:'terr',o:p.id,t:600,x:p.x,y:p.y});big('MY TERRITORY!','#e04a4a',44)},
  aunn:p=>{ENT.push({k:'dog',o:p.id,t:720,x:p.x,y:p.y,cd:0});big('KOMAINU GUARD','#5cff7a',44)},
  narumi:p=>{p.fx.armor=600;big('LIVING STATUE: SUPER ARMOR','#a0a0a0',40)},
- satono:p=>{CX.dance={o:p.id,t:600};big('DANCE!','#ff8fd0',54)},
+ satono:p=>{CX.dance={o:p.id,t:600};big('BACKSTAGE BEAT: DODGE THE NOTES!','#ff8fd0',40)},
  mai:p=>{const r=xR(),w=r[2]-r[0],h=r[3]-r[1],m=(r[1]+r[3])/2;for(let i=0;i<7;i++)ENT.push({k:'bamb',o:p.id,t:480+i*6,x:r[0]+(i+.5)*w/7,y:clamp(m+(i%2?1:-1)*h*.27+(rng()-.5)*40,r[1]+120,r[3]-30),sh:0});big('BAMBOO CHOREOGRAPHY','#5cff7a',44);sfx('aimreal',1.7)},
  okina:p=>{for(let i=0;i<3;i++){const r=xR();ENT.push({k:'mirr',o:p.id,t:600,x:r[0]+(i+.5)*(r[2]-r[0])/3,y:r[1]+(r[3]-r[1])*(i%2?.3:.7)})}big('SECRET DOORS: ENTER A MIRROR','#ffd23a',36)},
  yukari:p=>{CX.yuka={o:p.id,t:660};big('BOUNDARY OF EVERYTHING','#c020e0',44)}});
@@ -1453,7 +1453,7 @@ function chPre3(){
    if(frame===O.n+100){O.ph=0;O.n=frame+30;for(const q of al)if(q.id!==o){if(q.ordOK)txt(q.x,q.y-40,'OBEYED','#9f9',14);else{txt(q.x,q.y-40,'DISOBEY!','#f44',20);ENT.push({k:'shaku',o,tg:q.id,t:50,d:rng()*4|0,x:q.x,y:q.y});sfx('swordheavy',.5)}}}}}
  if(CX.koto&&CX.koto.t%80===0&&CX.koto.n<3){const r=xR(),n=CX.koto.n,h=n!==1,d=n===2?-1:1;ENT.push({k:'kstr',o:CX.koto.o,t:400,h,d,pos:h?(d>0?r[1]:r[3]):r[0],r});CX.koto.n++;sfx('se_kira00',.4)}
  if(CX.moon&&CX.moon.t%150===0){const fs=al.filter(q=>q.id!==CX.moon.o);if(fs.length){const q=fs[rng()*fs.length|0];ENT.push({k:'moonf',o:CX.moon.o,t:90,x:q.x,y:q.y});big('THE MOON IS FALLING!','#ffe8a0',40);sfx('timeout',.6)}}
- if(CX.dance&&CX.dance.t%180===90)for(const q of al)if(q.id!==CX.dance.o&&q.state!=='spell'){q.dance=90;txt(q.x,q.y-40,'♪ DANCE ♪','#ff8fd0',18)}
+ if(CX.dance&&CX.dance.t%180===90)for(const q of al)if(q.id!==CX.dance.o&&q.state!=='spell')ENT.push({k:'snote',o:CX.dance.o,t:45,T:45,x:q.x,y:q.y})
  if(CX.proph){const R=CX.proph,v=P[R.v],o=P[R.o];
   if(v&&v.state!=='dead'){if(R.k==='homing')for(const b of B)if(b.owner!==v.id&&!b.fake){const s=Math.hypot(b.vx,b.vy),a=Math.atan2(b.vy,b.vx),da=((Math.atan2(v.y-b.y,v.x-b.x)-a)%TAU+TAU*1.5)%TAU-Math.PI,na=a+clamp(da,-.04,.04);b.vx=Math.cos(na)*s;b.vy=Math.sin(na)*s}
    if(R.k==='drain'){v.hp-=.2;if(v.hp<=0)ko(v,'PROPHECY')}if(R.k==='tether'){if(!R.c)R.c={x:v.x,y:v.y,t:600};v.cage={x:R.c.x,y:R.c.y,t:2}}
@@ -1595,7 +1595,7 @@ Object.assign(GIVE,{
  zanmu:p=>{CX.void={o:p.id,t:600,cells:[]};big('NOTHINGNESS','#222',60);flash(.5,'#000')},
  ubame:p=>{const al=P.filter(q=>q.state!=='dead'),r=xR(),mx=(r[0]+r[2])/2,my=(r[1]+r[3])/2,Q=al.length<=2?[[r[0],r[1],mx,r[3]],[mx,r[1],r[2],r[3]]]:[[r[0],r[1],mx,my],[mx,r[1],r[2],my],[r[0],my,mx,r[3]],[mx,my,r[2],r[3]]],z={},d0={};al.forEach((q,i)=>{const Z=Q[i];z[q.id]=Z;d0[q.id]=q.hp;Object.assign(q,{x:(Z[0]+Z[2])/2,y:(Z[1]+Z[3])/2,vx:0,vy:0});burst(q.x,q.y,COLS[q.id],12)});CX.tilt={o:p.id,t:0,z,d0,n:al.length};big('THE MOUNTAIN TILTS: MOST DAMAGED DIES','#8a6a4a',36);sfx('teleportation',.5)},
  chimi:p=>{const q=nearFoe(p.id,p.x,p.y),w=T.MAP_W/3,x=clamp(q?q.x:T.MAP_W/2,w/2,T.MAP_W-w/2),x0=x-w/2,x1=x+w/2;CX.mtn={o:p.id,t:0,x,w,rv:[[x0,T.MAP_H*.3,x0-1100,T.MAP_H*.95],[x1,T.MAP_H*.22,x1+1100,T.MAP_H*.9]]};big('THE MOUNTAIN SPIRITS AWAKEN','#5a8a5a',40)},
- nareko:p=>{const r=xR(),cw=(r[2]-r[0])/6,ch=(r[3]-r[1])/4,c=[];const DI=[[1,0],[0,1],[-1,0],[0,-1]],G=[];for(let i=0;i<6;i++)for(let j=0;j<4;j++){const ok=[0,1,2,3].filter(d=>{const ni=i+DI[d][0],nj=j+DI[d][1];if(ni<0||ni>5||nj<0||nj>3)return false;const o=G[ni*4+nj];return !(o!==undefined&&o===(d+2)%4)});const d=ok.length?ok[rng()*ok.length|0]:0;G[i*4+j]=d;c.push({x:r[0]+i*cw,y:r[1]+j*ch,w:cw,h:ch,a:d*Math.PI/2})}CX.road={o:p.id,t:600,c};for(const q of P)if(q!==p&&q.state!=='dead'){const C=c.find(C=>q.x>=C.x&&q.x<C.x+C.w&&q.y>=C.y&&q.y<C.y+C.h);if(C){q.x=C.x+C.w/2;q.y=C.y+C.h/2}}big('ONE WAY ONLY','#e8c040',44)},
+ nareko:p=>{const r0=xR(),mx=(r0[2]-r0[0])*.12,my=(r0[3]-r0[1])*.12,r=[r0[0]+mx,r0[1]+my,r0[2]-mx,r0[3]-my],cw=(r[2]-r[0])/6,ch=(r[3]-r[1])/4,c=[];const DI=[[1,0],[0,1],[-1,0],[0,-1]],dist=(i,j)=>Math.min(i,5-i,j,3-j);for(let i=0;i<6;i++)for(let j=0;j<4;j++){const k=dist(i,j),ok=[0,1,2,3].filter(d=>{const ni=i+DI[d][0],nj=j+DI[d][1];if(ni<0||ni>5||nj<0||nj>3)return k===0;return dist(ni,nj)<k});const d=ok.length?ok[rng()*ok.length|0]:0;c.push({x:r[0]+i*cw,y:r[1]+j*ch,w:cw,h:ch,a:d*Math.PI/2})}CX.road={o:p.id,t:600,c};for(const q of P)if(q!==p&&q.state!=='dead'){const C=c.find(C=>q.x>=C.x&&q.x<C.x+C.w&&q.y>=C.y&&q.y<C.y+C.h);if(C){q.x=C.x+C.w/2;q.y=C.y+C.h/2}}big('ONE WAY ONLY','#e8c040',44)},
  yuiman:p=>{p.fx.serp=600;p.serpV=0;big("SERPENT'S REBIRTH",'#ff5030',46);sfx('spawn2heavy',.5)},
  toyohime:p=>{const q=nearFoe(p.id,p.x,p.y),a=q?Math.atan2(q.y-p.y,q.x-p.x):p.aim,c=Math.cos(a),s=Math.sin(a);for(const b of B)if(b.owner!==p.id)b.dead=1;
   for(const r of P)if(r!==p&&r.state!=='dead'&&r.inv<=0){r.pips=Math.max(0,r.pips-1);hit(r,p,c,s,IM.fan,1,true);Object.assign(r,{state:'hitstun',t:400,spit:1,vx:c*13,vy:s*13})}ENT.push({k:'lfan',o:p.id,t:340,a});
@@ -4776,6 +4776,12 @@ EST.odr=(e,o)=>{if(e.hp===undefined)return;for(const b of B)if(!b.dead&&b.owner!
 {const D0=drawP;drawP=q=>{D0(q);if(q.state==='dead')return;
  if(q.ctr&&q.ctr.t>frame){const k=(q.ctr.t-frame)/300,R=bodyR(q)*1.9;ctx.save();ctx.strokeStyle='#6a9a4a';ctx.lineWidth=3;ctx.beginPath();ctx.arc(q.x,q.y,R,-Math.PI/2,-Math.PI/2+TAU*k);ctx.stroke();ctx.font='bold 13px monospace';ctx.textAlign='center';ctx.fillStyle='#b8e890';ctx.fillText('CONTRACT '+Math.ceil(k*5)+'s: HIT P'+(q.ctr.o+1),q.x,q.y-R-8);ctx.restore()}
  if(q.fx&&q.fx.larva>0){ctx.save();ctx.globalAlpha=.6+.4*Math.sin(frame*.25);ctx.font='bold 14px monospace';ctx.textAlign='center';ctx.fillStyle='#c8ff5a';ctx.fillText('MOVE!',q.x,q.y+bodyR(q)+22);ctx.restore()}}}
+// ---- Satori : fantôme de prédiction (0,4 s) et visée dessus · Satono : notes à esquiver
+{const S1=step;step=()=>{const s=CX&&CX.sat,o=s&&P[s.o];for(const p of P){if(p.satM&&!(s&&o===p)){p.maim=null;p.satM=0}}
+ if(mode==='game'&&o&&o.state!=='dead'){const q=nearFoe(o.id,o.x,o.y,2000);if(q){o.maim=[q.x+q.vx*24,q.y+q.vy*24];o.satM=1}}S1()}}
+EST.snote=(e,o)=>{if(e.t!==1)return;let hit1=false;for(const q of P)if(foeQ(o,q)&&Math.hypot(q.x-e.x,q.y-e.y)<30+bodyR(q)){if(chHitQ(o,q,0,1,8,4,16))hit1=true}if(hit1)o.spirit=Math.min(T.SPIRIT_MAX,o.spirit+10);burst(e.x,e.y,'#ff8fd0',12);sfx('taikobleu',.5)};
+EDR.snote=e=>{const u=e.t/e.T;ctx.strokeStyle='#ff8fd0';ctx.globalAlpha=.7;ctx.lineWidth=2;ctx.beginPath();ctx.arc(e.x,e.y,30*u+8,0,TAU);ctx.stroke();ctx.globalAlpha=1;const y=e.y-e.t*6;ctx.fillStyle='#ff8fd0';ctx.font='bold 30px sans-serif';ctx.textAlign='center';ctx.fillText('♪',e.x,y+10)};
+{const D0=drawP;drawP=q=>{D0(q);const s=CX.sat;if(!s||q.id===s.o||q.state==='dead')return;const x=q.x+q.vx*24,y=q.y+q.vy*24;ctx.save();ctx.globalAlpha=.35;ctx.strokeStyle='#ff8fd0';ctx.setLineDash([4,4]);ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,bodyR(q),0,TAU);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(q.x,q.y);ctx.lineTo(x,y);ctx.stroke();ctx.restore()}}
 // ---- porte audio : le navigateur bloque le son tant qu'il n'y a ni clic ni touche (la manette ne compte pas) → écran clair « clique pour jouer »
 let AGT=0,AGN=0;for(const e of['pointerdown','mousedown','keydown','touchstart'])addEventListener(e,()=>{AGT=performance.now()},true);
 const aLock=()=>AC&&AC.state!=='running';
