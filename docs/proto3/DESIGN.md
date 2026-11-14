@@ -66,6 +66,8 @@ packs/
   lab/           bug lab (secret code "ewekeks" on title screen)
   dev-tools/     inspector, logs, overlays (disabled by default in Options)
   i18n/          string tables (en, fr), language switch
+  std/           shared library: vectors, shapes, collisions, grids, tilemaps, pathfinding, easing, noise
+  minigames/<id>/  bosses/<id>/  (any new feature = a new folder, see §18)
 ```
 
 ### 2.3 Pack manifest (`pack.ts`)
@@ -285,7 +287,68 @@ packs/touhou/characters/reimu/
 
 ---
 
-## 18. Risk register (keep adding)
+## 18. Whole features as folders (modes, bosses, adventure, minigames)
+
+Requirement: a complete feature (boss fights, adventure mode, classic/arcade mode, minigames, anything unique) is added by **adding one pack folder**, without editing other packs. Sections 2–6 assumed "everything is a versus match"; this section removes that assumption.
+
+### 18.1 The kernel knows worlds, not matches
+- A **world** = a set of systems + the state slices they own + a controller list. The kernel steps, snapshots, hashes and rolls back *any* world. "Versus match" is just one world recipe.
+- A **mode** pack declares a *flow*: a state machine of steps (`screen`, `world`, `cutscene`, `results`, `branch`) and which world recipe each step uses. Examples:
+  - `modes/versus`: select → versus world → results → back.
+  - `modes/classic`: ladder of 8 versus worlds against CPUs + final boss + ending.
+  - `modes/boss-rush`, `modes/adventure`, `minigames/<name>`.
+- A minigame may use **none** of core-combat: it declares its own systems (e.g. platformer physics) and still gets determinism, rollback, replays, lab and debug for free.
+
+### 18.2 core-combat is split into composable system packs
+`movement`, `bullets`, `collision`, `health`, `statuses`, `stocks-ko`, `parry`, `spells`, `items`, `camera-rules`, `spawning`. A world recipe lists the systems it uses. A boss fight can drop `stocks-ko` and add `boss-phases`; a minigame can use only `collision` + its own system.
+
+### 18.3 Actors and controllers
+- Players, CPUs, bosses, enemies and NPCs are all **actors**. An actor has an archetype (character, boss, enemy…) and a **controller** (human input, CPU AI, boss script, network).
+- A boss is built from the same move files as characters (`shot.ts`, `melee/*.ts`, `spell.ts`…) plus `phases/*.ts` and a script controller. Any character move can be reused by a boss and vice versa.
+
+### 18.4 Scripts that survive rollback
+JS generators/coroutines cannot be snapshotted. Scripts (boss patterns, cutscenes, tutorials, adventure events) are **serializable state machines**: instruction pointer + local variables stored in state, authored with a builder (`wait(60)`, `until(cond)`, `spawnPattern(...)`, `say('adventure:line-12')`, `branch(...)`). They rewind and replay like everything else. Ban generators in sim code (lint).
+
+### 18.5 Content types are extensible
+The kernel does not know "character", "item" or "map". Packs **declare content types** (name, schema, folder convention, loader, validator): `core-combat` declares `character`, `item`, `map`; `adventure` can declare `region`, `dialogue`, `quest`; a mod can declare a brand-new type. The catalog generator and the mod loader work for any declared type.
+
+### 18.6 Extension points for UI and flow
+- Hub cards, title menu entries, options panels, results panels, pause-menu entries are **slots** filled by packs (`ui.slot('hub', {...})`). A new mode appears in the hub by existing.
+- Screens are registered by packs; the router only knows ids.
+- Render **layers** (background, world, bullets, fx, hud, overlay) with explicit z-order; packs add layers instead of patching the renderer.
+- Input **action maps** per context (fight, menu, adventure, minigame X); devices map to actions, modes read actions.
+
+### 18.7 Two kinds of persistent data
+- **World state**: inside the sim, rolled back, hashed.
+- **Profile data**: progression, unlocks, adventure saves, stats, settings, achievements. Outside the sim, schema-versioned with migrations, namespaced per pack. A world receives the profile data it needs as read-only input at start and returns changes as a result (so worlds stay pure and replayable).
+
+### 18.8 Capabilities
+Each mode/world recipe declares: players min/max, local/online, rollback-safe, spectatable, needs assets X. The UI and netcode read capabilities instead of hard-coding rules per mode.
+
+### 18.9 Shared standard library (`packs/std`)
+Vector math, shapes and collision tests (circle, rect, segment, polygon), spatial grid, tilemaps, pathfinding, easing, deterministic noise, timers. Minigames and bosses build on it instead of copying code from core-combat.
+
+---
+
+## 19. My working environment (built in phase 2, before any porting)
+
+The goal is that I never guess: I can run, see, query and compare anything from the command line.
+
+- **One command:** `pnpm check` = typecheck + lint + tests related to changed files (fast); `pnpm check:all` = everything CI runs.
+- **Scaffolding:** `pnpm new character <id>`, `pnpm new item <family>/<id>`, `pnpm new mode <id>`, `pnpm new minigame <id>`, `pnpm new boss <id>`, `pnpm new content-type <id>`. Each generates the folder, manifest, typed stubs, a failing test to fill, README and i18n keys, so every new thing starts correct and consistent.
+- **Headless runner:** `pnpm sim run <scenario|replay> --frames N --dump state.json --journal` runs any world without a browser and prints state/events.
+- **Journal queries:** `pnpm sim why --replay r.json --entity p1 --frame 1200` lists the events, hooks and values that changed that entity, with the pack/file responsible.
+- **Divergence bisect:** `pnpm sim bisect a.json b.json` finds the first frame and first field where two runs differ (desyncs, regressions, parity vs old game).
+- **Deep links:** the game boots straight into any situation by URL, e.g. `?world=versus&p1=touhou:reimu&p2=touhou:marisa&give=0:touhou:black-hole&frame=300&pause=1`. Playwright and humans use the same links; bug reports include one.
+- **Frame screenshots:** `pnpm shot "<deep link>" --frames 0,60,120` renders those frames to PNG (Playwright, fixed seed) so I can look at visual results without manual play; screenshot diffs catch visual regressions.
+- **Pack graph:** `pnpm graph` prints the dependency graph of packs, hooks per event phase, and which pack overrides what.
+- **Generated catalogs** (§16) are my index: I read the catalog first, then only the files it points to.
+- **Old-game bridge:** the old `shmup-fighter.html` runs headless with the same scenario API (parity harness), so "is this the same as before?" is a command, not a guess.
+- **Fast feedback:** TypeScript project references per pack, Vitest related-file mode, Vite HMR for UI; content hot reload in dev uses the same path as mods.
+
+---
+
+## 21. Risk register (keep adding)
 | # | Risk | Mitigation |
 |---|---|---|
 | R1 | Transcendental Math differs across browsers | §3.1 ban + `sim.math` |
@@ -318,3 +381,13 @@ packs/touhou/characters/reimu/
 | R28 | localStorage size limits | saves/settings in localStorage (small, versioned); mods/replays in IndexedDB |
 | R29 | Save/settings format changes | schema version + migrations |
 | R30 | Photosensitive effects | Effects OFF tested; no full-screen flash in OFF |
+| R31 | Kernel assumes "a match", blocking new modes | worlds + flows (§18.1) |
+| R32 | New mode needs combat internals | composable system packs + std lib (§18.2, §18.9) |
+| R33 | Coroutines not snapshottable (boss scripts, cutscenes) | serializable script machines, generators banned (§18.4) |
+| R34 | New kinds of content need kernel changes | packs declare content types (§18.5) |
+| R35 | Adding a mode requires editing hub/menus | UI slots, screen registry (§18.6) |
+| R36 | Progression mixed with sim state breaks replays | world state vs profile data (§18.7) |
+| R37 | Per-mode rules hard-coded in UI/netcode | capabilities (§18.8) |
+| R38 | Inconsistent new content (missing tests, i18n, docs) | scaffolding generators (§19) |
+| R39 | Guessing instead of observing | headless runner, journal queries, bisect, deep links, frame screenshots (§19) |
+| R40 | Online co-op in story/adventure worlds with save data | world receives read-only profile input, returns results; host's profile used online |
