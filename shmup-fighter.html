@@ -5022,7 +5022,7 @@ var YTSB=0,YTBG=0;
 const Y={on:1,list:DEFL,vid:'',shuf:0,rep:0,mini:0,v:[],c:0,view:0,ord:[],P:null,ready:0,st:-1,cv:0,op:35,bl:4,bgv:1,vm:100,share:0,res:null,busy:0,tip:0,act:0,bad:0,nodes:new Map,vol:-1,tsP:0,gest:0,lt:0,lid:''};
 try{Object.assign(Y,JSON.parse(localStorage.getItem('sf_yt')||'{}'))}catch(e){}
 if(Y.gone)Y.on=Y.won===0?0:1;Y.gone=0;Y.v=[];Y.nodes=new Map;Y.ord=[];Y.res=null;
-const ySave=()=>{try{localStorage.setItem('sf_yt',JSON.stringify({ox:Y.ox,oy:Y.oy,miniS:Y.miniS,op:Y.op,bl:Y.bl,bgv:Y.bgv,vm:Y.vm,share:Y.share,gone:Y.gone,won:Y.won,on:Y.on,list:Y.list,vid:Y.vid,shuf:Y.shuf,rep:Y.rep,mini:Y.mini}))}catch(e){}};
+const ySave=()=>{try{localStorage.setItem('sf_yt',JSON.stringify({miniS:Y.miniS,op:Y.op,bl:Y.bl,bgv:Y.bgv,vm:Y.vm,share:Y.share,gone:Y.gone,won:Y.won,on:Y.on,list:Y.list,vid:Y.vid,shuf:Y.shuf,rep:Y.rep,mini:Y.mini}))}catch(e){}};
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const thumb=id=>'https://i.ytimg.com/vi/'+id+'/mqdefault.jpg';
 const fmt=s=>{s=Math.max(0,s|0);const h=s/3600|0,m=(s%3600)/60|0,x=s%60;return(h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0')};
@@ -5178,6 +5178,7 @@ const st=document.createElement('style');st.textContent=`
 #ytan .pb{position:absolute;left:0;bottom:0;height:3px;width:100%;background:linear-gradient(90deg,var(--c1,#ff4f9a),var(--c2,#7b3dff));transform-origin:0 50%;transform:scaleX(0)}#ytan.on .pb{animation:ytq 3.4s linear both}@keyframes ytq{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 #yt.sm .sr{height:32px;top:8px}#yt.sm .go{width:32px;height:32px;top:8px}#yt.sm input{font-size:16px}#yt.sm .ls,#yt.sm .rs{top:48px;bottom:70px}#yt.sm .cb{height:56px;padding-top:5px;bottom:6px}#yt.sm .bt{margin-top:2px}#yt.sm .bt button{width:24px;height:24px}#yt.sm .bt .pp{width:30px;height:30px}#yt.sm .bt svg{width:16px;height:16px}#yt.sm .pop{bottom:68px}
 #yt.sm .tip{display:none}#yt.sm .tb{top:8px}#ytan.sm{transform-origin:50% 0}@media (max-height:520px){#ytan{bottom:auto;top:10px;padding:6px 14px 6px 6px;gap:10px}#ytan .th{width:96px}#ytan b{font-size:14px}#ytan span{font-size:11px}#ytnow{font-size:11px}}
+#ytsk{position:fixed;left:50%;top:14%;z-index:9;transform:translate(-50%,-6px);padding:8px 16px;border-radius:14px;background:rgba(10,8,24,.78);color:#fff;font:800 18px 'Segoe UI',system-ui,sans-serif;text-align:center;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;box-shadow:0 0 0 1.5px color-mix(in srgb,var(--c1,#ff4f9a) 70%,transparent)}#ytsk.on{opacity:1;transform:translate(-50%,0)}#ytsk small{display:block;font:600 12px 'Segoe UI',system-ui,sans-serif;opacity:.75}
 @media (prefers-reduced-motion:reduce){#yt *,#ytnow *{animation:none!important}}`;
 document.head.appendChild(st);
 const R=document.createElement('div');R.id='yt';R.className='hide';
@@ -5308,8 +5309,10 @@ let lw=0;const loop=()=>{requestAnimationFrame(loop);const m=mode,hub=m==='menu'
  const top=!hub&&!ing&&m!=='title',pos=top?'auto|14px|8px|auto':(hub&&!cls?sbw+16:14)+'px|auto|auto|'+(hub?Math.round(innerHeight*.07)+8:10)+'px';if(N._p!==pos){const q=pos.split('|');N._p=pos;N.style.left=q[0];N.style.right=q[1];N.style.top=q[2];N.style.bottom=q[3]}
  const hostN=typeof ONL!=='undefined'&&ONL&&ONL.id===0;R.classList.toggle('host',!!hostN);
  const mv=m==='title'||m==='maker'||!Y.on||Y.gone?'off':Y.bgv?'bg':!cls&&hub&&Y.curN?'card':'off';if(mv!==Y.vmo){if(Y.vmo&&mv!=='off'&&Y.vmo!=='off'){VW.classList.add('mv');clearTimeout(Y.mvt);Y.mvt=setTimeout(()=>VW.classList.remove('mv'),900)}Y.vmo=mv;VW.classList.toggle('bg',mv==='bg');VW.classList.toggle('off',mv==='off')}
- const LO=lockd()&&Y.hop!=null,eop=LO?Y.hop:Y.op,ebl=LO?Y.hbl:Y.bl;if(m!=='game'&&m!=='css'&&typeof pads==='function'){const g=pads()[0];if(g){const ax=g.axes[2]||0,ay=g.axes[3]||0;if(Math.abs(ax)>.2||Math.abs(ay)>.2){Y.ox=clamp((Y.ox||0)+ax*10,-innerWidth*.35,innerWidth*.35);Y.oy=clamp((Y.oy||0)+ay*10,-innerHeight*.35,innerHeight*.35);Y.osv=1}else if(Y.osv){Y.osv=0;ySave()}if(g.buttons[11]&&g.buttons[11].pressed&&(Y.ox||Y.oy)){Y.ox=Y.oy=0;ySave()}}}
- let rc='';if(mv==='bg'){const iw=innerWidth,ih=innerHeight,w=Math.max(iw,ih*16/9),h=w*9/16;rc=(((iw-w)/2+(Y.ox||0))|0)+'|'+(((ih-h)/2+(Y.oy||0))|0)+'|'+(w|0)+'|'+(h|0)}else if(mv==='card'){const b=Y.curN.getBoundingClientRect();rc=(b.left|0)+'|'+(b.top|0)+'|'+(b.width|0)+'|'+(b.height|0)}
+ const LO=lockd()&&Y.hop!=null,eop=LO?Y.hop:Y.op,ebl=LO?Y.hbl:Y.bl;if((m!=='game'||winner>=0)&&m!=='css'&&typeof pads==='function'&&Y.ready&&Y.on){const g=pads()[0],ax=g?g.axes[2]||0:0,d=ax>.5?1:ax<-.5?-1:0;
+  // second stick = flèches de YouTube : 5 s par appui ; maintenu 1 s -> répète toutes les 100 ms
+  if(d!==Y.skd){Y.skd=d;if(d){Y.skT=now+1000;ySeek(d)}}else if(d&&now>=Y.skT){Y.skT=now+100;ySeek(d)}}
+ let rc='';if(mv==='bg'){const iw=innerWidth,ih=innerHeight,w=Math.max(iw,ih*16/9),h=w*9/16;rc=((iw-w)/2|0)+'|'+((ih-h)/2|0)+'|'+(w|0)+'|'+(h|0)}else if(mv==='card'){const b=Y.curN.getBoundingClientRect();rc=(b.left|0)+'|'+(b.top|0)+'|'+(b.width|0)+'|'+(b.height|0)}
  if(rc&&rc!==Y.rc){Y.rc=rc;const q=rc.split('|');VW.style.left=q[0]+'px';VW.style.top=q[1]+'px';VW.style.width=q[2]+'px';VW.style.height=q[3]+'px'}const fl=mv==='bg'&&ebl?'blur('+ebl+'px)':'none';if(VW.style.filter!==fl)VW.style.filter=fl;
  YTBG+=((mv==='bg'&&(Y.st===1||Y.st===2||Y.st===3)?eop/100:0)-YTBG)*.06;if(YTBG<.003)YTBG=0;
  if(hostN&&Y.share&&Y.ready&&Y.on&&Y.v.length&&(now-(Y.lb||0)>3000)){Y.lb=now;const v=Y.v[Y.c];try{onlBcast({t:'ym',op:Y.op,bl:Y.bl,v:v.id,s:Y.P.getCurrentTime()||0,p:Y.st===1?1:0,ti:v.title||'',au:v.author||'',du:v.duration||''})}catch(e){}}
@@ -5317,6 +5320,8 @@ let lw=0;const loop=()=>{requestAnimationFrame(loop);const m=mode,hub=m==='menu'
 requestAnimationFrame(loop);
 addEventListener('resize',()=>requestAnimationFrame(yLay));
 // petite API pour le débogage / les autres écrans
+const SK=document.createElement('div');SK.id='ytsk';document.body.appendChild(SK);
+function ySeek(d){if(lockd()){toast('🔒 The host controls the music',1500);return}try{const du=Y.P.getDuration()||0,t=clamp((Y.P.getCurrentTime()||0)+d*5,0,Math.max(0,du-1));Y.P.seekTo(t,true);Y.lb=0;SK.innerHTML=(d<0?'⏪':'⏩')+' 5 s<small>'+fmt(t)+' / '+fmt(du)+'</small>';SK.classList.remove('on');void SK.offsetWidth;SK.classList.add('on');clearTimeout(Y.skh);Y.skh=setTimeout(()=>SK.classList.remove('on'),700)}catch(e){}}
 function yHost(m){if(m.off){Y.hc=0;Y.hop=Y.hbl=null;toast('The host stopped sharing music',2500);return}Y.hc=performance.now();if(m.op!=null){Y.hop=+m.op;Y.hbl=+m.bl}if(!Y.on||!Y.ready||!m.v)return;const cur=Y.v[Y.c];
  if(!cur||cur.id!==m.v){yInsert({id:m.v,title:m.ti,author:m.au,duration:m.du,st0:(m.s||0)+.4,host:1},1);yAnn('♪  HOST MUSIC');return}
  let t=0;try{t=Y.P.getCurrentTime()||0}catch(e){}if(m.p&&Math.abs(t-m.s)>2.5)try{Y.P.seekTo(m.s+.3,true)}catch(e){}if(m.p&&Y.st!==1&&Y.st!==3)try{Y.P.playVideo()}catch(e){}if(!m.p&&Y.st===1)try{Y.P.pauseVideo()}catch(e){}}
