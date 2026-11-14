@@ -729,7 +729,7 @@ function fireLight(p){
  S.f(p,p.aim,p.focus,pmul(p,0),p.power|0);if(p.clone>0){const c=cloneOf(p);S.f(c,c.aim,p.focus,pmul(p,0)*.7,p.power|0)}}
 const pmul=(p,k)=>(p.buff==='PUISSANCE'?1.4:1)*(1+k*((p.power|0)-1)); // bonus de dégâts par niveau de puissance
 function spawnH(p,m,a,pm,o={}){const sp=o.spd||m.spd,c=Math.cos(a),n=Math.sin(a),of=o.off||0;
- const b={x:p.x+c*20-n*of,y:p.y+n*20+c*of,vx:c*sp,vy:n*sp,r:o.r||m.r,owner:p.id,heavy:1,m,mult:pm*(o.k||1),dist:0,life:o.life||m.life||200,dead:0,seen:0,home:o.home||0,gr:0};tagB(p,b);B.push(b)}
+ const b={x:p.x+c*20-n*of,y:p.y+n*20+c*of,vx:c*sp,vy:n*sp,r:o.r||m.r,owner:p.id,heavy:1,m,mult:pm*(o.k||1),dist:0,life:o.life||m.life||200,dead:0,seen:0,home:o.home||0,gr:0};tagB(p,b);if(B.length>=T.MAX_B){const k=B.findIndex(q=>!q.heavy);if(k>=0)B.splice(k,1);else return}B.push(b)} // plafond MAX_B : un tir lourd remplace la plus vieille balle légère
 // Tirs lourds selon le type de tir choisi (N neutre, F vers l'adversaire, B en s'éloignant). k = part des dégâts par balle
 const HEAVY=[
  {N:(p,m,a,k)=>{for(const o of[-.22,0,.22])spawnH(p,m,a+o,k,{k:.6})},F:(p,m,a,k)=>spawnH(p,m,a,k),B:(p,m,a,k)=>spawnH(p,m,a,k)}, // Éventail
@@ -3057,7 +3057,7 @@ function diffD(a,b){if(!a||!b)return 'no detail';const o=[];if(a.f!==b.f)o.push(
  for(const k of new Set([...Object.keys(a.E),...Object.keys(b.E)]))if(a.E[k]!==b.E[k])o.push('ent:'+k);for(const k of new Set([...Object.keys(a.X),...Object.keys(b.X)]))if(a.X[k]!==b.X[k])o.push('cx:'+k);return o.join(',')||'?'}
 function gameSum(){let h=2166136261>>>0;const m=x=>{h=Math.imul(h^(x*1000|0),16777619)>>>0};m(frame);m(seed);m(B.length);m(ENT.length);m(winner);for(const p of P){m(p.x);m(p.y);m(p.vx);m(p.vy);m(p.hp);m(p.stocks);m(p.spirit);m(p.t);m(p.state.length)}for(const b of B){m(b.x);m(b.y)}return h}
 
-// ===== JEU EN LIGNE : rollback netcode 2 à 4 joueurs (entrées seulement, prédiction + retour arrière, relais par l'hôte) =====
+// ===== JEU EN LIGNE : rollback netcode 2 à 32 joueurs (entrées seulement, prédiction + retour arrière, relais par l'hôte) =====
 let NET=null,RESIM=false;
 const NMAXP=10,NSUMEV=60;
 function netNew(L,send,D,n){n=n||2;const N={L,n,f:0,D:D||2,inp:[],pred:[],conf:[],rf:[],rc:[],drop:[],S:new Map(),rb:Infinity,send,rtt:100,lat:0,sums:new Map(),rsum:new Map(),prov:new Map(),desync:-1,stall:0,rbN:0,rbMax:0,pingT:0,skip:0,lastMsg:0,ended:false,miss:0,left:[]};
