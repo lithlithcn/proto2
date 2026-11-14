@@ -297,6 +297,7 @@ Requirement: a complete feature (boss fights, adventure mode, classic/arcade mod
   - `modes/versus`: select → versus world → results → back.
   - `modes/classic`: ladder of 8 versus worlds against CPUs + final boss + ending.
   - `modes/boss-rush`, `modes/adventure`, `minigames/<name>`.
+- Flows nest: any world or flow can be a step of another flow. A minigame is playable standalone (hub slot) *and* as a step inside adventure/classic, with no extra code. Every mode is designed local-first with online co-op/versus available through capabilities (§18.8); online uses the host's profile data.
 - A minigame may use **none** of core-combat: it declares its own systems (e.g. platformer physics) and still gets determinism, rollback, replays, lab and debug for free.
 
 ### 18.2 core-combat is split into composable system packs
