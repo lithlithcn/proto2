@@ -20,6 +20,13 @@ Non-goals (for now): mod editor UI, auto-translation, leaderboard server, mod sa
 ### 0.1 How to use this document
 Read §0–§2 and §21 before any task. §25 is the risk register: every new failure mode found during work is added there with its mitigation. When the repo exists, this file is split into `docs/ARCHITECTURE.md`, `docs/CONVENTIONS.md`, `docs/DEBUG.md`, `docs/TESTING.md`, `docs/MODDING.md` with this file kept as the index.
 
+### 0.15 Build now vs later (anti over-engineering)
+Formats and interfaces are fixed now; implementations arrive when needed.
+- **Phase 2 (skeleton) builds:** kernel, schemas + generated snapshot/hash/diff, RNG streams, `sim.math`, pack loader for built-in packs, events/hooks with phases, commands, world config, replays, headless runner, `pnpm check`, scaffolding, CI, docs skeleton.
+- **Built when the port reaches it:** each combat system, render, UI, online, audio, YouTube, i18n FR, quality tiers, interpolation, lab UI.
+- **After parity:** mod folder loader, in-browser TS transpiler, mod API compatibility suite, spectators, replay sharing, new modes.
+Anything not listed must justify itself in an ADR before being built.
+
 ### 0.2 Requirements traceability (owner's requirements → where they are satisfied)
 | # | Requirement (from the Proto3 brief and the design discussion) | Sections |
 |---|---|---|
@@ -61,7 +68,7 @@ Read §0–§2 and §21 before any task. §25 is the risk register: every new fa
 | Hosting | GitHub Pages, deploy by GitHub Actions only after all checks pass | Pages cannot set COOP/COEP headers → no SharedArrayBuffer → sim stays on main thread (see §9). |
 | Online | Keep current PeerJS + WebRTC + Cloudflare TURN (`sf-turn` worker), host relay (star) | Works today. |
 | Workers | `sf-turn` (TURN creds), `sort-maker` (YouTube playlist/search/thumb proxy) live in `workers/` | Deployment mode decided later. |
-| Runtime deps | PeerJS, small TS transpiler for mods (lazy-loaded), small schema validator | Minimise deps: 10–20 year horizon. |
+| Runtime deps | PeerJS, small TS transpiler for mods (lazy-loaded), small schema validator, small zip reader (lazy-loaded, mods) | Minimise deps: 10–20 year horizon. |
 
 ---
 
@@ -133,6 +140,7 @@ Content files are discovered by folder convention (`import.meta.glob` for built-
 7. **Runtime sanitizer** (dev, lab): during each sim step, `Math.random`, `Date.now`, `performance.now` and banned `Math.*` are trapped and throw with file/line. Catches mods, which lint cannot see.
 8. **Input quantisation.** Analog values are int8 before entering the sim.
 9. Everything that affects the sim is an **input** or a **command** at a frame (§6). Nothing else.
+10. Also banned in sim: `localeCompare`, `Intl`, `toLocaleString`, `JSON.stringify` for hashing (hashing walks schemas in schema order), recursion without a depth bound (stack limits differ between browsers, so an overflow would not be deterministic).
 
 ---
 
@@ -160,7 +168,7 @@ Slices are namespaced: `state.packs['touhou']`. A pack may only write its own sl
 All rule-changing effects are statuses in state: `{ id, owner, source, t0, duration, stacks, params }`. Derived values are computed: `stat(player, 'damageOut')` = base × all active modifiers, in a deterministic order. Items, spells, rules and mods add statuses; they never sprinkle `if (flag)` checks through other systems.
 
 ### 4.5 Special cases that must be designed for (from the old game)
-- **History Rewritten** (restores past state) → kernel service `history` storing snapshots *inside* state (schema type `blob`), so rollback stays correct.
+- **History Rewritten** (restores past state) → kernel service `history` storing compact snapshots *inside* state (schema type `blob`), so rollback stays correct. A history blob never contains the history slice itself (no nested snapshots), and its size is capped.
 - **Body Swap / control remap** → sim-level controller indirection table (`controllerOf[player]`) in state.
 - **View-affecting items** (darkness, fog, inverted colours, camera swap) → sim exposes *view modifiers* in state; render reads them. Render never decides gameplay.
 - **Time stop, slow motion, x2 speed** → kernel time-scale owned by the sim (frames still advance deterministically).
@@ -211,6 +219,8 @@ No per-bullet-per-frame dynamic hook dispatch. Systems iterate typed arrays dire
 ## 8. UI
 ### 8.1 Screens
 One folder per screen in `packs/ui/screens/<screen>/` (screen component + panels as separate files + its strings). Navigation is a small router with a stack; every screen works with keyboard, gamepad, mouse and **touch only** (tested).
+### 8.15 Screen interface (framework-agnostic)
+The router only knows `Screen = { id, mount(el, ctx) → { destroy, onAction? } }`. Built-in screens are Svelte components compiled at build time behind this interface; mods (which cannot compile Svelte in the browser) implement the same interface with plain DOM or their own pre-built bundle. Replacing Svelte later only touches the `ui` pack.
 ### 8.2 Style
 Reproduce the current look (skewed cards, italic heavy titles, glass sidebar, Limbus-like frames). Shared design tokens (colors, fonts, easing) in one file.
 ### 8.3 HUD
@@ -223,7 +233,7 @@ No user-visible string in code. All text via `t('pack:key')`, string tables per 
 ## 9. Threads and timing
 - Sim on main thread (no SharedArrayBuffer on GitHub Pages).
 - Hidden tab: rAF is throttled → a Web Worker clock keeps net ticks alive (as today).
-- Budget: sim step ≤ 4 ms at 32 players + max bullets on a mid laptop; measured in CI benchmark and in the lab.
+- Budget: a rollback re-simulates several frames inside one display frame, so the **sim step budget is ≤ 1.5 ms** (4 players, heavy bullets, mid laptop) so that an 8-frame rollback fits in ~12 ms. With many players the netcode adapts: larger input delay and smaller prediction window, measured live. Budgets are checked by CI benchmarks and by the lab.
 - Zero allocations per frame in sim hot paths (pools, preallocated snapshots).
 
 ---
@@ -277,7 +287,7 @@ Config screen (number of parallel matches, characters, items, rules, duration, f
 - Scenario DSL: `scenario().players('touhou:reimu','touhou:marisa').give(0,'touhou:black-hole').run(120).expect(...)`. One test file next to every attack/item.
 - Determinism tests (fuzz inputs twice, and with random rollbacks) — mandatory for every pack.
 - Golden replays with stored final hashes; intentional balance change = explicit golden update in the same commit.
-- Parity harness vs old game: same scenarios run in the old HTML (headless) and Proto3; compare observables (positions, HP, statuses) with tolerance.
+- Parity harness vs old game: a frozen copy of the old game lives in `legacy/shmup-fighter.html`. Same inputs run in both; compare observables (damage, durations, speeds, positions, statuses) with tolerance. **Parity scenarios are short and isolate one mechanic** (one attack, one item, one interaction, ≤ ~2 s): the new deterministic trig makes long full matches diverge chaotically, so full-match parity is checked by humans, not by numbers.
 - Playwright: every screen with keyboard, pad emulation and touch-only; mobile viewport; screenshots.
 - Benchmarks: sim step time, snapshot time, bullets throughput, with budgets; CI fails when a budget regresses by more than 10 %.
 - Workers: unit tests for each route (playlist, search, thumb, TURN credentials) run locally with Wrangler's test environment; a scheduled health check calls the deployed workers and opens an issue on failure; the game shows a clear message when a worker is down.
@@ -411,6 +421,8 @@ Render supports N viewports (local split views, spectator, picture-in-picture). 
 - No AI-generated assets (sounds, music, images, sprites). Every asset file has an entry in the pack's `assets/CREDITS.md` (origin, author). CI fails on unlisted assets.
 - No religious references, deities or pentagrams in content; neutral equivalents. Review checklist item for every content change.
 - Assets are loaded lazily per world/screen from a pack manifest.
+- Touhou fan-work guidelines are respected (non-commercial fan game, credit to Team Shanghai Alice).
+- Accessibility: full remapping, Effects OFF, readable colour choices for teams/players (colour-blind-safe palette option).
 
 ### 20.8 Public API versioning
 `@kernel` and each pack's public API follow semver. Breaking changes need an ADR, a migration note and a version bump; deprecated APIs keep working for one major version. A compatibility test suite runs a set of sample mods against the current API.
@@ -478,6 +490,8 @@ No other runtime network dependency is allowed without an entry here.
 9. Update docs/catalog/ADR in the same commit.
 10. Push; CI deploys only if everything passes.
 
+**Real-device check:** emulators are not enough; each phase ends with the owner testing on his PC and phone (list of things to try provided by me).
+
 **Definition of done for a ported feature:** behaviour matches the old game (parity scenario passes), tests exist next to the code, works on keyboard/pad/touch, works online if capable, respects Effects OFF, documented in the catalog, ticked in `docs/INVENTORY.md`.
 
 ---
@@ -534,3 +548,10 @@ No other runtime network dependency is allowed without an entry here.
 | R47 | One UI crash kills the app | error boundaries (§20.11) |
 | R48 | Players lose their old data | origin-shared import (§20.12) |
 | R49 | New features integrated inconsistently | integration checklist (§21) |
+| R50 | Building future features too early | build-now/later list (§0.15) |
+| R51 | Rollback resimulation too slow at many players | 1.5 ms step budget + adaptive delay (§9) |
+| R52 | Long parity scenarios diverge chaotically | short single-mechanic parity scenarios (§14) |
+| R53 | Mods cannot use Svelte screens | framework-agnostic screen interface (§8.15) |
+| R54 | Locale/recursion-dependent behaviour | extra determinism bans (§3.10) |
+| R55 | Nested history snapshots explode memory | no nested history, capped size (§4.5) |
+| R56 | Emulator-only testing misses real bugs | owner real-device check per phase (§24) |
