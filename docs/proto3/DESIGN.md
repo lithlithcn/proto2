@@ -53,7 +53,8 @@ The kernel never imports a pack. Packs import only the kernel API (`@kernel`) an
 ### 2.2 Packs (everything else)
 ```
 packs/
-  core-combat/   players, bullets, collisions, statuses, damage, KO, parry, spells, items framework
+  combat/        group of composable system packs (§18.2): movement, bullets, collision, health, statuses,
+                 stocks-ko, parry, spells, items, camera-rules, spawning, cpu-ai
   touhou/        characters/, items/, maps/, rules/      (Touhou content)
   modes/         versus, training, playground, online-match, cpu-battle
   ui/            screens and menus (Svelte)
@@ -76,11 +77,12 @@ export default definePack({
   id: 'touhou',                 // namespace; all ids inside are 'touhou:<name>'
   version: '1.0.0',
   requires: ['core-combat@^1'], // semver ranges
-  provides: ['characters', 'items', 'maps'],
+  provides: ['characters', 'items', 'maps'],   // named public APIs / content it contributes
   overrides: [],                // explicit ids this pack replaces, e.g. 'touhou:reimu'
   state: touhouStateSchema,     // this pack's state slice (§4)
 });
 ```
+Packs live in one Vite app (TS path aliases `@pack/<id>`); boundaries are enforced by dependency-cruiser, not by separate npm packages.
 Content files are discovered by folder convention (`import.meta.glob` for built-in packs, zip listing for mods). No hand-maintained registries.
 
 ### 2.4 Overrides and load order
@@ -349,7 +351,73 @@ The goal is that I never guess: I can run, see, query and compare anything from 
 
 ---
 
-## 20. Risk register (keep adding)
+## 20. Conventions and systems that every pack relies on
+
+### 20.1 Units (no exceptions)
+Durations in **frames** (integers, 60 per second); distances in arena pixels at scale 1; angles in radians, 0 = right, clockwise positive (screen y down); speeds in px/frame; percentages as 0–1. Helpers `sec(2)`/`deg(45)` convert when authoring. Units appear in field names when ambiguous (`durationF`, `radiusPx`).
+
+### 20.2 World config (the first record of every replay)
+`{ kernelVersion, contentHash, seed, worldRecipe, rules, players[{slot, actor, controller, team, color}], loadOrder }`. Rules (lives, timer, items, teams, map…) are part of the config, hashed, chosen by the host online. Changing them mid-world is a command (§6).
+
+### 20.3 Settings registry
+Packs declare settings `{ id, schema, default, scope, ui }`. Scope is either **client** (volume, effects, bindings, video opacity — never read by the sim) or **rule** (goes into world config). The Options screen and the rules screen are generated from the registry plus optional custom panels. Dev options are client settings, off by default.
+
+### 20.4 CPU AI and scripts produce inputs
+CPU and boss controllers output `InputFrame`s (or script actions for bosses), they never write state directly. Same rules for humans and AI ⇒ fair, replayable, debuggable. Per-actor `cpu.ts` files; difficulty levels are params.
+
+### 20.5 Viewports and cameras
+Render supports N viewports (local split views, spectator, picture-in-picture). Cameras are presentation, driven by sim view modifiers (§4.5). Transparent layers allow the YouTube video background behind the arena.
+
+### 20.6 Quality tiers
+`low / medium / high`, auto-detected on first run, client setting: particle budget, resolution scale, blur, interpolation. Gameplay never depends on tier.
+
+### 20.7 Assets and content policy
+- No AI-generated assets (sounds, music, images, sprites). Every asset file has an entry in the pack's `assets/CREDITS.md` (origin, author). CI fails on unlisted assets.
+- No religious references, deities or pentagrams in content; neutral equivalents. Review checklist item for every content change.
+- Assets are loaded lazily per world/screen from a pack manifest.
+
+### 20.8 Public API versioning
+`@kernel` and each pack's public API follow semver. Breaking changes need an ADR, a migration note and a version bump; deprecated APIs keep working for one major version. A compatibility test suite runs a set of sample mods against the current API.
+
+### 20.9 Kernel change policy
+The kernel changes only through an ADR plus the full determinism and golden suite. Most "kernel" ideas belong in a pack.
+
+### 20.10 Error codes
+Every reported error has a stable code (`E-NET-003`, `E-MOD-012`…) documented in `docs/errors.md` with cause and fix. Error panels and reports show the code; I can search it.
+
+### 20.11 Failure containment outside the sim
+Each UI screen has an error boundary (fallback panel + report, rest of the app alive). Render or audio errors never stop the sim or the netcode.
+
+### 20.12 Migration from the old game
+Proto3 is served from the same origin (`lithlithcn.github.io`) as the old game, so it can import the old `localStorage` data on first run: nickname, picture, stats, bindings, settings, YouTube player state, custom maps (format converter). Import is idempotent and logged.
+
+### 20.13 Mods can ship tests
+A mod may include `tests/` scenarios; dev-tools and the lab can run them, so mod authors get the same safety net as the base game.
+
+---
+
+## 21. Feature integration checklist (answer before coding any new feature)
+
+For every new request (character, item, boss, mode, minigame, screen, system…), write the answers in the PR/commit notes and ask the owner only the questions that are about taste or game design:
+1. Which **pack** owns it? New pack or existing one?
+2. Which **content types** does it add or use? Need a new content type?
+3. Which **world recipe(s)** and **systems** run it? New system or composition of existing ones?
+4. What **state** does it add (schema slice)? What must survive rollback?
+5. Which **events/hooks** does it emit or listen to, in which phase?
+6. Does it need **commands** (changes during a world)?
+7. Which **settings** (client vs rule)?
+8. Which **UI slots/screens**, which **input action map**?
+9. **Text** keys (en/fr), **assets** (+ credits), **sounds/music** (priority vs YouTube)?
+10. **Capabilities**: players min/max, online, spectate, mobile/touch.
+11. **Effects OFF / photosensitivity** behaviour, quality tiers.
+12. **Profile data**: progression, unlocks, saves (+ migration).
+13. **Performance** budget impact (bullets, entities, draw calls).
+14. **Tests**: scenarios, determinism, goldens, Playwright, lab coverage.
+15. **Docs**: catalog regenerated, PROJECT_MAP/README/ADR if architecture moved.
+
+---
+
+## 22. Risk register (keep adding)
 | # | Risk | Mitigation |
 |---|---|---|
 | R1 | Transcendental Math differs across browsers | §3.1 ban + `sim.math` |
@@ -392,3 +460,12 @@ The goal is that I never guess: I can run, see, query and compare anything from 
 | R38 | Inconsistent new content (missing tests, i18n, docs) | scaffolding generators (§19) |
 | R39 | Guessing instead of observing | headless runner, journal queries, bisect, deep links, frame screenshots (§19) |
 | R40 | Online co-op in story/adventure worlds with save data | world receives read-only profile input, returns results; host's profile used online |
+| R41 | Unit confusion (frames vs seconds, deg vs rad) | units convention (§20.1) |
+| R42 | Client settings leaking into sim | settings scopes (§20.3) |
+| R43 | AI cheating / unreplayable AI | AI outputs inputs only (§20.4) |
+| R44 | Untracked or AI-generated assets | CREDITS.md + CI check (§20.7) |
+| R45 | Mods broken by engine updates | semver public API + compatibility suite (§20.8) |
+| R46 | Kernel bloat over time | kernel change policy (§20.9) |
+| R47 | One UI crash kills the app | error boundaries (§20.11) |
+| R48 | Players lose their old data | origin-shared import (§20.12) |
+| R49 | New features integrated inconsistently | integration checklist (§21) |
