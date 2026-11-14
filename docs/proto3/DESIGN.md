@@ -17,6 +17,36 @@ Goals, in priority order:
 
 Non-goals (for now): mod editor UI, auto-translation, leaderboard server, mod sandboxing. Formats must not prevent them later.
 
+### 0.1 How to use this document
+Read §0–§2 and §21 before any task. §22 is the risk register: every new failure mode found during work is added there with its mitigation. When the repo exists, this file is split into `docs/ARCHITECTURE.md`, `docs/CONVENTIONS.md`, `docs/DEBUG.md`, `docs/TESTING.md`, `docs/MODDING.md` with this file kept as the index.
+
+### 0.2 Requirements traceability (owner's requirements → where they are satisfied)
+| # | Requirement (from the Proto3 brief and the design discussion) | Sections |
+|---|---|---|
+| Q1 | Full rewrite, not a reorganisation; nothing removed; same game, same look | §0, §17, §14 (parity), §20.12 |
+| Q2 | Architecture built for AI editing: clear responsibilities, explicit dependencies, no hidden globals, predictable names, no duplication, centralised config | §2, §4.2, §15, §20.1–20.3 |
+| Q3 | Smart modularity: one concept per file, character moves in separate files (Rivals workshop style), not hundreds of trivial files | §15 |
+| Q4 | Everything is a pack/mod reading each other; sandbox engine with total freedom | §2, §11, §18 |
+| Q5 | Whole features (bosses, adventure, classic, minigames) by adding a folder | §18, §21 |
+| Q6 | Exceptional debug: per system, calls, values, states, events, interactions, config changes, perf; levels and categories; near-zero cost when off | §12 |
+| Q7 | Modifications isolated; contracts between systems; no circular deps; testable in isolation | §2.1, §5, §14, §19 |
+| Q8 | Tests: unit, integration, regression, data validation, workers, broken dependencies, comparison with the old game | §14, §19 |
+| Q9 | Documentation made for Claude, kept in sync (PROJECT_MAP, guides) | §16 |
+| Q10 | Performance and memory optimised but measurable, never at the cost of readability | §9, §14 (benchmarks), §20.6 |
+| Q11 | Phased method (audit → design → repo → rewrite → verification → finalisation), validated by the owner at each phase | §17, §24 |
+| Q12 | One link, no install; any technology allowed if that holds; external dependencies identified | §1, §23 |
+| Q13 | TypeScript, English code and docs, HTML/CSS menus, GitHub Pages, current PeerJS + TURN | §1 |
+| Q14 | Translations (per-language text files, maybe auto-translate later) | §8.4 |
+| Q15 | Mods: zip files in a `mods/` folder, characters/maps/items/…, JS or TS, Rivals-style hot reload key, extreme debug for modders | §11, §12, §20.13 |
+| Q16 | Bug lab with dozens/hundreds of parallel matches, unlocked by typing `ewekeks` on the title screen | §13 |
+| Q17 | Dev options off by default in Options; no separate dev site | §12, §20.3 |
+| Q18 | No visual effect shown for a rolled-back prediction | §7 |
+| Q19 | Mobile fully usable by touch only | §8.1, §14 |
+| Q20 | Epilepsy safety (Effects OFF) | §7, §14 |
+| Q21 | No AI-generated assets; no religious references or pentagrams | §20.7 |
+| Q22 | Online 2–32 players, host features (music sharing, rules), spectators | §10, §18.8 |
+| Q23 | Each future request is analysed for how it integrates with the environment; organising questions asked, feasibility questions not | §21 |
+
 ---
 
 ## 1. Stack (decided)
@@ -233,6 +263,8 @@ Periodic hash per section. On mismatch: exchange snapshot, field-level diff, rep
 - **Profiler:** time per system per frame, allocation counter.
 - **Bug report = replay** (seed, settings, content hash, inputs, commands) + logs + last snapshots. Headless CLI replays it to a given frame and dumps state.
 - **Error file auto-download** option (kept from the old game).
+- **Trace mode** (deep debug, per category): records each hook call with pack/file, event payload before and after the hook, and the system that emitted it; records every settings/config change with old → new value and source. Off by default; sampled to stay cheap.
+- **Dependency diagnostics:** on boot, prints the resolved pack graph, overrides applied, hooks per phase, and warns about unused/duplicate hooks (same output as `pnpm graph`).
 
 ---
 
@@ -247,7 +279,9 @@ Config screen (number of parallel matches, characters, items, rules, duration, f
 - Golden replays with stored final hashes; intentional balance change = explicit golden update in the same commit.
 - Parity harness vs old game: same scenarios run in the old HTML (headless) and Proto3; compare observables (positions, HP, statuses) with tolerance.
 - Playwright: every screen with keyboard, pad emulation and touch-only; mobile viewport; screenshots.
-- Benchmarks: sim step time, snapshot time, bullets throughput.
+- Benchmarks: sim step time, snapshot time, bullets throughput, with budgets; CI fails when a budget regresses by more than 10 %.
+- Workers: unit tests for each route (playlist, search, thumb, TURN credentials) run locally with Wrangler's test environment; a scheduled health check calls the deployed workers and opens an issue on failure; the game shows a clear message when a worker is down.
+- Data validation tests: every content file, string table, map and setting schema is validated in CI.
 - CI order: typecheck → lint (boundaries, determinism bans, file size) → unit/scenario → determinism → goldens → build → Playwright → deploy. Any failure blocks deploy.
 
 ---
@@ -274,6 +308,8 @@ packs/touhou/characters/reimu/
 - `docs/ARCHITECTURE.md`, short `README.md` per pack (entry points, public API, events used).
 - `docs/adr/NNNN-title.md`: one per important decision with context and rejected options.
 - Generated (CI fails if stale): catalog of packs, characters, attacks, items, events, statuses, commands, settings, strings.
+- Required guides: `docs/DEBUG.md` (tools, how to diagnose a bug or desync step by step), `docs/ADDING.md` (recipes: new character, item, map, boss, mode, minigame, content type, screen, setting), `docs/MODIFYING.md` (how to change an existing system safely), `docs/MODDING.md` (mod format and API), `docs/errors.md` (error codes), `docs/EXTERNAL.md` (§23).
+- Any architectural change updates the relevant doc in the same commit (checklist item in §24).
 
 ---
 
@@ -414,6 +450,35 @@ For every new request (character, item, boss, mode, minigame, screen, system…)
 13. **Performance** budget impact (bullets, entities, draw calls).
 14. **Tests**: scenarios, determinism, goldens, Playwright, lab coverage.
 15. **Docs**: catalog regenerated, PROJECT_MAP/README/ADR if architecture moved.
+
+---
+
+## 23. External dependencies (all of them, explicitly)
+| Dependency | Used for | If it fails |
+|---|---|---|
+| GitHub Pages | hosting the game | game unreachable; static build can be moved to any host |
+| PeerJS public signalling server (`0.peerjs.com`) | players finding each other online (kept by owner's choice) | online lobby cannot be created/joined; clear error; local play unaffected |
+| Cloudflare Worker `sf-turn` + Cloudflare Realtime TURN | relay when direct WebRTC fails | fallback to Metered TURN, then direct-only; diagnostics show relay status |
+| Cloudflare Worker `sort-maker` | YouTube playlist, search, thumbnail proxy | player shows message, game music used |
+| YouTube IFrame API | music/video playback | player disabled, game music used |
+| Google STUN servers | NAT discovery | other STUN entries, then TURN |
+No other runtime network dependency is allowed without an entry here.
+
+---
+
+## 24. Working method for every task (from the Proto3 brief §10)
+1. Understand the expected result; ask taste/design questions early (owner prefers questions over wasted work).
+2. Identify the packs/systems concerned (PROJECT_MAP, catalogs).
+3. Check their dependencies (`pnpm graph`).
+4. Choose the most targeted architectural solution; run the §21 checklist.
+5. Evaluate regression risks (goldens, parity, determinism).
+6. Make the smallest correct change; never rewrite a whole system when a targeted change suffices; no new abstraction without a reason.
+7. Test the concerned systems (`pnpm check`), then everything (`pnpm check:all`) before pushing.
+8. Verify nothing else broke (goldens, Playwright, lab smoke run).
+9. Update docs/catalog/ADR in the same commit.
+10. Push; CI deploys only if everything passes.
+
+**Definition of done for a ported feature:** behaviour matches the old game (parity scenario passes), tests exist next to the code, works on keyboard/pad/touch, works online if capable, respects Effects OFF, documented in the catalog, ticked in `docs/INVENTORY.md`.
 
 ---
 
