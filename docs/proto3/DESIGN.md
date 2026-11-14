@@ -348,7 +348,7 @@ The goal is that I never guess: I can run, see, query and compare anything from 
 
 ---
 
-## 21. Risk register (keep adding)
+## 20. Risk register (keep adding)
 | # | Risk | Mitigation |
 |---|---|---|
 | R1 | Transcendental Math differs across browsers | §3.1 ban + `sim.math` |
