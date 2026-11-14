@@ -18,7 +18,7 @@ Goals, in priority order:
 Non-goals (for now): mod editor UI, auto-translation, leaderboard server, mod sandboxing. Formats must not prevent them later.
 
 ### 0.1 How to use this document
-Read §0–§2 and §21 before any task. §22 is the risk register: every new failure mode found during work is added there with its mitigation. When the repo exists, this file is split into `docs/ARCHITECTURE.md`, `docs/CONVENTIONS.md`, `docs/DEBUG.md`, `docs/TESTING.md`, `docs/MODDING.md` with this file kept as the index.
+Read §0–§2 and §21 before any task. §25 is the risk register: every new failure mode found during work is added there with its mitigation. When the repo exists, this file is split into `docs/ARCHITECTURE.md`, `docs/CONVENTIONS.md`, `docs/DEBUG.md`, `docs/TESTING.md`, `docs/MODDING.md` with this file kept as the index.
 
 ### 0.2 Requirements traceability (owner's requirements → where they are satisfied)
 | # | Requirement (from the Proto3 brief and the design discussion) | Sections |
@@ -482,7 +482,7 @@ No other runtime network dependency is allowed without an entry here.
 
 ---
 
-## 22. Risk register (keep adding)
+## 25. Risk register (keep adding)
 | # | Risk | Mitigation |
 |---|---|---|
 | R1 | Transcendental Math differs across browsers | §3.1 ban + `sim.math` |
