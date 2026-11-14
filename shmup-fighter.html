@@ -5282,7 +5282,7 @@ const popT=k=>{const o=POP.classList.contains('on')&&POP.classList.contains(k);P
 $('.vl').addEventListener('wheel',e=>{e.preventDefault();e.stopPropagation();Y.vm=clamp(Y.vm+(e.deltaY<0?5:-5),0,100);Y.vol=-1;ySave();popSync()},{passive:false});
 VR.oninput=()=>{Y.vm=+VR.value;Y.vol=-1;ySave();popSync()};ORR.oninput=()=>{if(lockd()){toast('🔒 The host sets the video',1800);popSync();return}Y.op=+ORR.value;ySave();popSync();Y.lb=0};BRR.oninput=()=>{if(lockd()){toast('🔒 The host sets the video',1800);popSync();return}Y.bl=+BRR.value;ySave();popSync();Y.lb=0};
 $('.bgc').onchange=e=>{Y.bgv=e.target.checked?1:0;ySave()};$('.shc').onchange=e=>{Y.share=e.target.checked?1:0;ySave();Y.lb=0;if(!Y.share&&typeof ONL!=='undefined'&&ONL&&ONL.id===0)try{onlBcast({t:'ym',off:1})}catch(x){}};popSync();
-$('.go').onclick=ySubmit;$('.cl').onclick=()=>{INP.value='';showRes(null);INP.focus()};
+$('.go').onclick=()=>ySubmit();$('.cl').onclick=()=>{INP.value='';showRes(null);INP.focus()};
 $('.bar').onclick=e=>{if(!Y.ready)return;const r=e.currentTarget.getBoundingClientRect(),d=Y.P.getDuration&&Y.P.getDuration();if(d)Y.P.seekTo(clamp((e.clientX-r.left)/r.width,0,1)*d,true)};
 function setOn(o){Y.on=o;ySave();btns();if(!Y.ready)return;if(o)yPlay(Y.c);else{try{Y.P.pauseVideo()}catch(e){}}if(MAUD)MAUD.volume=0}
 function btns(){$('.sh').classList.toggle('on',!!Y.shuf);$('.rp').classList.toggle('on',!!Y.rep);$('.pw').classList.toggle('off',!Y.on);$('.pp').innerHTML=Y.st===1&&Y.on?ico.pause:ico.play;N.classList.toggle('pl',Y.st===1&&Y.on);VW.classList.toggle('on',Y.st===1&&Y.on)}
@@ -5313,7 +5313,7 @@ let lw=0;const loop=()=>{requestAnimationFrame(loop);const m=mode,hub=m==='menu'
   // second stick = flèches de YouTube : 5 s par appui ; maintenu 1 s -> répète toutes les 100 ms
   if(d!==Y.skd){Y.skd=d;if(d){Y.skT=now+1000;ySeek(d)}}else if(d&&now>=Y.skT){Y.skT=now+100;ySeek(d)}}
  let rc='';if(mv==='bg'){const iw=innerWidth,ih=innerHeight,w=Math.max(iw,ih*16/9),h=w*9/16;rc=((iw-w)/2|0)+'|'+((ih-h)/2|0)+'|'+(w|0)+'|'+(h|0)}else if(mv==='card'){const b=Y.curN.getBoundingClientRect();rc=(b.left|0)+'|'+(b.top|0)+'|'+(b.width|0)+'|'+(b.height|0)}
- if(rc&&rc!==Y.rc){Y.rc=rc;const q=rc.split('|');VW.style.left=q[0]+'px';VW.style.top=q[1]+'px';VW.style.width=q[2]+'px';VW.style.height=q[3]+'px'}const fl=mv==='bg'&&ebl?'blur('+ebl+'px)':'none';if(VW.style.filter!==fl)VW.style.filter=fl;
+ if(rc&&rc!==Y.rc){Y.rc=rc;const q=rc.split('|');VW.style.left=q[0]+'px';VW.style.top=q[1]+'px';VW.style.width=q[2]+'px';VW.style.height=q[3]+'px'}const inv=m==='game'&&typeof TSTOP!=='undefined'&&TSTOP>0,fl=[mv==='bg'&&ebl?'blur('+ebl+'px)':'',inv?'invert(1)':''].join(' ').trim()||'none';if(VW.style.filter!==fl)VW.style.filter=fl;
  YTBG+=((mv==='bg'&&(Y.st===1||Y.st===2||Y.st===3)?eop/100:0)-YTBG)*.06;if(YTBG<.003)YTBG=0;
  if(hostN&&Y.share&&Y.ready&&Y.on&&Y.v.length&&(now-(Y.lb||0)>3000)){Y.lb=now;const v=Y.v[Y.c];try{onlBcast({t:'ym',op:Y.op,bl:Y.bl,v:v.id,s:Y.P.getCurrentTime()||0,p:Y.st===1?1:0,ti:v.title||'',au:v.author||'',du:v.duration||''})}catch(e){}}
  if(now-Y.lt<250)return;Y.lt=now;if(Y.ready&&Y.P.getCurrentTime&&!cls){const d=Y.P.getDuration()||0,t=Y.P.getCurrentTime()||0;T0.textContent=fmt(t);T1.textContent=fmt(d);BAR.style.width=(d?t/d*100:0)+'%'}};
