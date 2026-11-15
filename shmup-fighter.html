@@ -4213,7 +4213,7 @@ let DEVMAP=null,SELTY=null;const CSEL={sl:[],pv:{},cd:0,t0:0};
 const devList=()=>{const L=['k0','k1'];pads().forEach((g,j)=>L.push('p'+j));return L};
 const devName=d=>d==='k0'?'KEYBOARD 1':d==='k1'?'KEYBOARD 2':'PAD '+(+d.slice(1)+1);
 function devIn(d){const I={x:0,y:0,a:0,b:0,s:0};if(d[0]==='k'){const m=KB[+d[1]];I.x=kd(m.right)-kd(m.left);I.y=kd(m.down)-kd(m.up);I.a=kd(m.shot)||d==='k0'&&(kd('Enter')||kd('Space'));I.b=kd(m.parry)||d==='k0'&&kd('Escape');I.s=d==='k0'&&kd('Enter')}
- else{const g=pads()[+d.slice(1)];if(!g)return I;const bt=n=>g.buttons[n]&&g.buttons[n].pressed;I.x=(Math.abs(g.axes[0]||0)>.5?Math.sign(g.axes[0]):0)||(bt(15)?1:bt(14)?-1:0);I.y=(Math.abs(g.axes[1]||0)>.5?Math.sign(g.axes[1]):0)||(bt(13)?1:bt(12)?-1:0);I.a=bt(0);I.b=bt(1);I.s=bt(9);I.y=bt(3)}return I}
+ else{const g=pads()[+d.slice(1)];if(!g)return I;const bt=n=>g.buttons[n]&&g.buttons[n].pressed;I.x=(Math.abs(g.axes[0]||0)>.5?Math.sign(g.axes[0]):0)||(bt(15)?1:bt(14)?-1:0);I.y=(Math.abs(g.axes[1]||0)>.5?Math.sign(g.axes[1]):0)||(bt(13)?1:bt(12)?-1:0);I.a=bt(0);I.b=bt(1);I.s=bt(9);}return I}
 function cselOpen(){CSEL.sl=[0,1,2,3,4,5,6,7].map(i=>({dev:null,ty:SELTY&&SELTY[i]>=CH0?SELTY[i]:CHL[i%CHL.length],rd:false}));CSEL.pv={};CSEL.cd=0;CSEL.t0=UNOW();for(const d of devList())CSEL.pv[d]=devIn(d);mode='csel';sfx('ok00')}
 function cselTick(){const S=CSEL.sl;for(const d of devList()){const I=devIn(d),p=CSEL.pv[d]||{},e=k=>I[k]&&!p[k];CSEL.pv[d]=I;let i=S.findIndex(s=>s.dev===d);
   if(i<0){if(e('a')){const n=S.findIndex(s=>!s.dev);if(n>=0){S[n].dev=d;S[n].rd=false;if(nP<n+1)nP=n+1;sfx('joined',.7)}}else if(e('b')&&!S.some(s=>s.dev)){mode='menu';sfx('cancel00')}continue}
@@ -4823,7 +4823,7 @@ function cssTick(){const S=CS2.sl;for(const d of devList()){const I=cssIn(d),p=C
   if(i<0){if(d[0]==='p'&&e('s')&&!S.some(s=>s.dev&&!s.rd)){cssGo();return}if(e('a')){const n=S.findIndex(s=>!s.dev);if(n>=0){S[n].dev=d;S[n].rd=false;S[n].pg=false;sfx('joined',.7)}}else if(e('b')&&!S.some(s=>s.dev)){mode='menu';sfx('cancel00')}continue}
   const s=S[i];
   if(s.pg){if(e('s')||e('b')){s.pg=false;sfx('cancel00')}continue} // dans le playground : Start = revenir à la sélection
-  if(!s.rd){const j=Math.max(0,CHL.indexOf(s.ty)),N=CHL.length,C=4;let k=j;if(I.x&&I.x!==p.x)k=(j+(I.x>0?1:N-1))%N;if(I.y&&I.y!==p.y)k=(j+(I.y>0?C:N-C))%N;if(k!==j){s.ty=CHL[k];sfx('se_select00',.5)}
+  if(!s.rd){const j=Math.max(0,CHL.indexOf(s.ty)),N=CHL.length,C=W<H*1.05?Math.min(4,N):Math.min(5,Math.ceil(N/2)),rows=Math.ceil(N/C);let k=j;if(I.x&&I.x!==p.x){const row=Math.floor(j/C),col=j%C,first=row*C,count=Math.min(C,N-first);k=first+(col+(I.x>0?1:count-1))%count}else if(I.y&&I.y!==p.y){const row=Math.floor(j/C),col=j%C,nr=(row+(I.y>0?1:rows-1))%rows;k=Math.min(nr*C+col,N-1)}if(k!==j){s.ty=CHL[k];sfx('se_select00',.5)}
    if(e('a')){s.rd=true;sfx('ok00')}if(e('b')){s.dev=null;sfx('cancel00')}}
   else{if(e('p')){s.pg=true;sfx('joined',.8)}else if(e('b')){s.rd=false;sfx('cancel00')}else if(e('s')||e('a')&&d==='k0'&&kd('Enter')){const J=S.filter(s=>s.dev);if(J.every(s=>s.rd)){cssGo();return}}}}
  // playground : la composition change -> on relance la petite partie derrière
