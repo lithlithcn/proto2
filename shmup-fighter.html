@@ -5247,14 +5247,14 @@ async function wkGet(path){let err;for(const w of WKS){const c=new AbortControll
 const cacheK=l=>'sf_ytc_'+l;
 function setList(L,keep){if(keep&&L.length===Y.v.length&&L.every((v,i)=>v.id===Y.v[i].id)){L.forEach((v,i)=>{Object.assign(Y.v[i],v);const n=[...Y.nodes].find(([p])=>md(p)===i),d=n&&n[1].querySelector('.d');if(d&&v.duration){d.textContent='♪ '+v.duration;d.style.display=''}});yInfo();return}const prev=Y.v[Y.c];Y.v=L;let i=keep&&prev?L.findIndex(v=>v.id===prev.id):-1;if(i<0&&Y.vid)i=L.findIndex(v=>v.id===Y.vid);Y.c=Math.max(0,i);Y.cv=Y.c;Y.view=Y.c;mkOrd();for(const[k,n]of Y.nodes){n.remove()}Y.nodes.clear();yLay();yInfo()}
 function mkOrd(){const n=Y.v.length;Y.ord=[...Array(n).keys()];for(let i=n-1;i>0;i--){const j=Math.random()*(i+1)|0;[Y.ord[i],Y.ord[j]]=[Y.ord[j],Y.ord[i]]}}
-async function yLoad(list,auto){if(!list)return;const same=list===Y.list&&Y.v.length;Y.list=list;ySave();let C=null;try{C=JSON.parse(localStorage.getItem(cacheK(list))||'null')}catch(e){}
- if(C&&C.length&&!same){setList(C);if(Y.ready&&auto!==0)yPlay(Y.c,1)}
+async function yLoad(list,auto,randomStart){if(!list)return;const same=list===Y.list&&Y.v.length;Y.list=list;ySave();let C=null;try{C=JSON.parse(localStorage.getItem(cacheK(list))||'null')}catch(e){}
+ if(C&&C.length&&!same){setList(C);if(randomStart&&Y.v.length){Y.c=Math.random()*Y.v.length|0;Y.cv=Y.c;Y.view=Y.c;Y.vid=Y.v[Y.c].id}if(Y.ready&&auto!==0)yPlay(Y.c,1)}
  Y.busy=1;toast('Loading playlist…');const out=[],seen=new Set;let cont=null,vd=null;
  try{for(let pg=0;pg<60;pg++){const q=new URLSearchParams({id:list});if(cont)q.set('continuation',cont);if(vd)q.set('visitorData',vd);const d=await wkGet('/playlist?'+q);
    if(d.error&&!(d.videos||[]).length){if(out.length)break;throw new Error(d.error)}let add=0;for(const v of d.videos||[])if(v&&v.id&&!seen.has(v.id)){seen.add(v.id);const o=C&&C.find(x=>x.id===v.id);out.push(Object.assign({},o||{},v));add++}
-   toast('Loading playlist… '+out.length+' tracks');if(!C&&pg===0&&out.length){setList(out.slice());if(Y.ready&&auto!==0)yPlay(Y.c,1)}vd=d.visitorData||vd;if(d.complete||!d.continuation||(!add&&d.continuation===cont))break;cont=d.continuation}
+   toast('Loading playlist… '+out.length+' tracks');if(!C&&pg===0&&out.length&&!randomStart){setList(out.slice());if(Y.ready&&auto!==0)yPlay(Y.c,1)}vd=d.visitorData||vd;if(d.complete||!d.continuation||(!add&&d.continuation===cont))break;cont=d.continuation}
   if(!out.length)throw new Error('empty playlist');setList(out,1);try{localStorage.setItem(cacheK(list),JSON.stringify(out.map(v=>({id:v.id,title:v.title,author:v.author,duration:v.duration,views:v.views,age:v.age}))))}catch(e){}
-  toast(out.length+' tracks',1800);if(Y.ready&&auto!==0&&Y.lid!==(Y.v[Y.c]||{}).id)yPlay(Y.c,1)}
+  toast(out.length+' tracks',1800);if(randomStart&&Y.v.length){Y.c=Math.random()*Y.v.length|0;Y.cv=Y.c;Y.view=Y.c;Y.vid=Y.v[Y.c].id}if(Y.ready&&auto!==0&&(randomStart||Y.lid!==(Y.v[Y.c]||{}).id))yPlay(Y.c,1)}
  catch(e){toast(Y.v.length?'Could not refresh the playlist ('+e.message+')':'Could not load the playlist: '+e.message,5000);console.warn('[YT] playlist',e)}Y.busy=0}
 const parseL=s=>{s=s.trim();let m=s.match(/[?&]list=([A-Za-z0-9_-]{10,64})/);if(m)return{list:m[1]};m=s.match(/^(PL|OL|RD|UU|LL|FL)[A-Za-z0-9_-]{8,62}$/);if(m)return{list:s};m=s.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([A-Za-z0-9_-]{11})/);if(m)return{vid:m[1]};return null};
 async function ySubmit(more){const s=more?Y.q:INP.value.trim();if(!s)return;const p=more?null:parseL(s);INP.blur();
@@ -5370,7 +5370,7 @@ function yHost(m){if(m.off){Y.hc=0;Y.hop=Y.hbl=null;toast('The host stopped shar
  let t=0;try{t=Y.P.getCurrentTime()||0}catch(e){}if(m.p&&Math.abs(t-m.s)>2.5)try{Y.P.seekTo(m.s+.3,true)}catch(e){}if(m.p&&Y.st!==1&&Y.st!==3)try{Y.P.playVideo()}catch(e){}if(!m.p&&Y.st===1)try{Y.P.pauseVideo()}catch(e){}}
 if(typeof onlMsg==='function'){const O=onlMsg;onlMsg=(m,k)=>{if(m&&m.t==='ym'){if(!(ONL&&ONL.id===0))yHost(m);return true}return O(m,k)}}
 window.YTP={locked:()=>lockd(),toast,Y,load:yLoad,play:yPlay,step:yStep,gone:yGone,ann:yAnn,host:yHost,pp:()=>$('.pp').onclick()};
-yLoad(Y.list||DEFL);if(Y.vid)yColor(Y.vid)}
+yLoad(Y.list||DEFL,1,1);if(Y.vid)yColor(Y.vid)}
 // manette / clavier dans le hub : L1/R1 (Q/E) = morceau précédent/suivant, Select = lecture/pause
 {const N0=nav;nav=ev=>{if(mode==='menu'&&window.YTP&&!YTP.Y.gone&&YTP.Y.v.length){if(ev==='tabL'||ev==='tabR'){if(YTP.locked()){YTP.toast('🔒 The host controls the music',1800);return}YTP.step(ev==='tabL'?-1:1,1,1);sfx('se_select00',.5);return}}return N0(ev)}}
 {const P0=padEv;padEv=k=>{if(k==='sel'&&mode==='menu'&&window.YTP&&!YTP.Y.gone&&YTP.Y.v.length){YTP.pp();return}P0(k)}}
